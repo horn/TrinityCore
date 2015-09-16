@@ -29,6 +29,14 @@ enum BattlePetMisc
     DEFAULT_SUMMON_BATTLE_PET_SPELL = 118301
 };
 
+enum BattlePetDBFlags
+{
+    BATTLE_PET_DB_FLAG_FAVORITE         = 0x01,
+    BATTLE_PET_DB_FLAG_SPELL_1_ROW_2    = 0x10,
+    BATTLE_PET_DB_FLAG_SPELL_2_ROW_2    = 0x20,
+    BATTLE_PET_DB_FLAG_SPELL_3_ROW_2    = 0x40
+};
+
 // TODO: fix undefined values in this enum
 enum BattlePetError
 {

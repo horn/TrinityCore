@@ -227,7 +227,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetUpdat
     }
 
     data.WriteBits(pet.JournalInfo.Name.size(), 7);
-    //data.FlushBits();
+    data.FlushBits();
     data.WriteString(pet.JournalInfo.Name);
 
     return data;
@@ -241,9 +241,8 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PlayerUpdate c
     data << uint16(player.RoundTimeSecs);
     data << int8(player.FrontPet);
     data << uint8(player.InputFlags);
-    // packet.ResetBitReader();
     data.WriteBits(player.Pets.size(), 2);
-    data.FlushBits(); // needed?
+    data.FlushBits();
 
     for (auto pet : player.Pets)
         data << pet;
@@ -307,7 +306,7 @@ WorldPacket const* WorldPackets::BattlePet::PetBattleInitialUpdate::Write()
     _worldPacket << InitialWildPetGuid;
     _worldPacket.WriteBit(IsPvp);
     _worldPacket.WriteBit(CanAwardXP);
-    _worldPacket.FlushBits(); // needed?
+    _worldPacket.FlushBits();
 
     return &_worldPacket;
 }

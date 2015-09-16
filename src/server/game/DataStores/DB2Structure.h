@@ -107,6 +107,15 @@ struct BattlePetSpeciesStateEntry
     int32 Value;                                                    // 3
 };
 
+struct BattlePetSpeciesXAbilityEntry
+{
+    uint32 ID;                                                      // 0
+    uint32 SpeciesID;                                               // 1
+    uint32 AbilityID;                                               // 2
+    uint32 Level;                                                   // 3
+    uint32 Slot;                                                    // 4
+};
+
 #define MAX_BROADCAST_TEXT_EMOTES 3
 
 struct BroadcastTextEntry
