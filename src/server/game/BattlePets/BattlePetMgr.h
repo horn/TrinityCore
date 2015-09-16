@@ -80,6 +80,8 @@ enum BattlePetSaveInfo
     BATTLE_PET_REMOVED   = 3
 };
 
+uint32 const TrapSpells[4] = { 427, 77, 135, 1368 };
+
 class BattlePetMgr
 {
 public:

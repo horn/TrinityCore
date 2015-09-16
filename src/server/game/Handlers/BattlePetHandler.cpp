@@ -78,3 +78,9 @@ void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummo
 {
     GetBattlePetMgr()->SummonPet(battlePetSummon.PetGuid);
 }
+
+void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
+{
+    /* TODO: SMSG_PET_BATTLE_FINALIZE_LOCATION
+             SMSG_PET_BATTLE_INITIAL_UPDATE*/
+}

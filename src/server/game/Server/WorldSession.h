@@ -138,6 +138,7 @@ namespace WorldPackets
         class BattlePetSetFlags;
         class BattlePetSummon;
         class CageBattlePet;
+        class PetBattleRequestWild;
     }
 
     namespace BlackMarket
@@ -1667,6 +1668,7 @@ class WorldSession
         void HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSetFlags& battlePetSetFlags);
         void HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummon& battlePetSummon);
         void HandleCageBattlePet(WorldPackets::BattlePet::CageBattlePet& cageBattlePet);
+        void HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild);
 
         // Warden
         void HandleWardenData(WorldPackets::Warden::WardenData& packet);

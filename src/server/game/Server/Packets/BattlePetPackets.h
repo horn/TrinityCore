@@ -190,6 +190,103 @@ namespace WorldPackets
 
             ObjectGuid PetGuid;
         };
+
+        // Pet Battles
+
+        struct LocationInfo
+        {
+            uint32 LocationResult = 0;
+            Position BattleOrigin;
+            Position PlayerPositions[2];
+        };
+
+        class PetBattleRequestWild final : public ClientPacket
+        {
+        public:
+            PetBattleRequestWild(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REQUEST_WILD, std::move(packet)) { }
+
+            void Read() override;
+
+            ObjectGuid TargetGuid;
+            LocationInfo LocationInfo;
+        };
+
+        class PetBattleFinalizeLocation final : public ServerPacket
+        {
+        public:
+            PetBattleFinalizeLocation() : ServerPacket(SMSG_PET_BATTLE_FINALIZE_LOCATION) { }
+
+            WorldPacket const* Write() override;
+
+            LocationInfo LocationInfo;
+        };
+
+        struct BattlePetAbility
+        {
+            uint32 Id = 0;
+            uint16 CooldownRemaining = 0;
+            uint16 LockdownRemaining = 0; // what's this?
+            uint8 Slot = 0;
+            uint8 PBOID = 0; // what's this?
+        };
+
+        struct BattlePetAura
+        {
+            uint32 Id = 0;
+            uint32 InstanceId = 0;
+            uint32 RoundsRemaining = 0;
+            uint32 CurrentRound = 0;
+            uint8 CasterPBOID = 0;
+        };
+
+        struct BattlePetUpdate
+        {
+            BattlePet JournalInfo;
+            uint32 NpcTeamMemberId = 0;
+            uint16 StatusFlags = 0; // same as Pet.Flags?
+            uint8 Slot = 0;
+            std::vector<BattlePetAbility> Abilities;
+            std::vector<BattlePetAura> Auras;
+            std::unordered_map<uint32 /*BattlePetState*/, int32 /*Value*/> States;
+        };
+
+        struct PlayerUpdate
+        {
+            ObjectGuid Guid;
+            uint32 TrapAbilityID = 0;
+            uint32 TrapStatus = 0;
+            uint16 RoundTimeSecs = 0;
+            int8 FrontPet = 0;
+            uint8 InputFlags = 0;
+            std::vector<BattlePetUpdate> Pets;
+        };
+
+        struct EnviromentUpdate
+        {
+            std::vector<BattlePetAura> Auras;
+            std::unordered_map<uint32 /*BattlePetState*/, int32 /*Value*/> States;
+        };
+
+        class PetBattleInitialUpdate final : public ServerPacket
+        {
+        public:
+            PetBattleInitialUpdate() : ServerPacket(SMSG_PET_BATTLE_INITIAL_UPDATE) { }
+
+            WorldPacket const* Write() override;
+
+            PlayerUpdate PlayerUpdate[2];
+            EnviromentUpdate EnviromentUpdate[3];
+            uint16 WaitingForFrontPetsMaxSecs = 0;
+            uint16 PvpMaxRoundTime = 0;
+            uint32 CurrentRound = 0;
+            uint32 NpcCreatureId = 0;
+            uint32 NpcDisplayId = 0;
+            uint8 CurrentPetBattleState = 0;
+            uint8 ForfeitPenalty = 10;
+            ObjectGuid InitialWildPetGuid;
+            bool IsPvp = false;
+            bool CanAwardXP = true;
+        };
     }
 }
 
