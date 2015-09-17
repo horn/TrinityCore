@@ -55,7 +55,7 @@ enum BattlePetError
 };
 
 // taken from BattlePetState.db2 - it seems to store some initial values for battle pets
-// there are only values used in BattlePetSpeciesState.db2 and BattlePetBreedState.db2
+// there are only values used in BattlePetSpeciesState.db2 and BattlePetBreedState.db2 + some used in pet battles packets
 // TODO: expand this enum if needed
 enum BattlePetState
 {
@@ -65,6 +65,17 @@ enum BattlePetState
     STATE_STAT_STAMINA              = 19,
     STATE_STAT_SPEED                = 20,
     STATE_MOD_DAMAGE_DEALT_PERCENT  = 23,
+    STATE_STAT_CRIT_CHANCE          = 40,
+    STATE_PASSIVE_CRITTER           = 42,
+    STATE_PASSIVE_BEAST             = 43,
+    STATE_PASSIVE_HUMANOID          = 44,
+    STATE_PASSIVE_FLYING            = 45,
+    STATE_PASSIVE_DRAGON            = 46,
+    STATE_PASSIVE_ELEMENTAL         = 47,
+    STATE_PASSIVE_MECHANICAL        = 48,
+    STATE_PASSIVE_MAGIC             = 49,
+    STATE_PASSIVE_UNDEAD            = 50,
+    STATE_PASSIVE_AQUATIC           = 51,
     STATE_GENDER                    = 78, // 1 - male, 2 - female
     STATE_COSMETIC_WATER_BUBBLED    = 85,
     STATE_SPECIAL_IS_COCKROACH      = 93,
@@ -80,6 +91,22 @@ enum BattlePetState
     STATE_COSMETIC_SPECTRAL_BLUE    = 196
 };
 
+enum BattlePetFamily
+{
+    BATTLE_PET_FAMILY_HUMANOID      = 0,
+    BATTLE_PET_FAMILY_DRAGONKIN     = 1,
+    BATTLE_PET_FAMILY_FLYING        = 2,
+    BATTLE_PET_FAMILY_UNDEAD        = 3,
+    BATTLE_PET_FAMILY_CRITTER       = 4,
+    BATTLE_PET_FAMILY_MAGIC         = 5,
+    BATTLE_PET_FAMILY_ELEMENTAL     = 6,
+    BATTLE_PET_FAMILY_BEAST         = 7,
+    BATTLE_PET_FAMILY_AQUATIC       = 8,
+    BATTLE_PET_FAMILY_MECHANICAL    = 9,
+
+    BATTLE_PET_FAMILY_MAX
+};
+
 enum BattlePetSaveInfo
 {
     BATTLE_PET_UNCHANGED = 0,
@@ -89,15 +116,32 @@ enum BattlePetSaveInfo
 };
 
 uint32 const TrapSpells[4] = { 427, 77, 135, 1368 };
+BattlePetState const FamilyStates[10] =
+{
+    STATE_PASSIVE_HUMANOID,
+    STATE_PASSIVE_DRAGON,
+    STATE_PASSIVE_FLYING,
+    STATE_PASSIVE_UNDEAD,
+    STATE_PASSIVE_CRITTER,
+    STATE_PASSIVE_MAGIC,
+    STATE_PASSIVE_ELEMENTAL,
+    STATE_PASSIVE_BEAST,
+    STATE_PASSIVE_AQUATIC,
+    STATE_PASSIVE_MECHANICAL
+};
 
 class BattlePetMgr
 {
 public:
     struct BattlePet
     {
+        int32 GetBaseStateValue(BattlePetState state);
         void CalculateStats();
 
-        WorldPackets::BattlePet::BattlePet PacketInfo;
+        BattlePetFamily GetFamily();
+
+        WorldPackets::BattlePet::BattlePetJournalInfo JournalInfo;
+        WorldPackets::BattlePet::PetBattlePetUpdateInfo UpdateInfo; // contains JournalInfo too - maybe redunant
         BattlePetSaveInfo SaveInfo;
     };
 
@@ -134,6 +178,10 @@ public:
     void SendUpdates(std::vector<BattlePet> pets, bool petAdded);
     void SendError(BattlePetError error, uint32 creatureId);
 
+    // Pet Battles
+
+    void InitializePetBattle(ObjectGuid target);
+
 private:
     WorldSession* _owner;
     uint16 _trapLevel = 0;
@@ -148,6 +196,7 @@ private:
     static std::unordered_map<uint32 /*SpeciesID*/, std::unordered_map<BattlePetState /*state*/, int32 /*value*/, std::hash<std::underlying_type<BattlePetState>::type> >> _battlePetSpeciesStates;
     static std::unordered_map<uint32 /*SpeciesID*/, std::unordered_set<uint8 /*breed*/>> _availableBreedsPerSpecies;
     static std::unordered_map<uint32 /*SpeciesID*/, uint8 /*quality*/> _defaultQualityPerSpecies;
+    static std::unordered_map<uint32 /*SpeciesID*/, std::array<std::array<uint32, 3>, 2> /*abilities*/> _abilitiesPerSpecies;
 };
 
 #endif // BattlePetMgr_h__

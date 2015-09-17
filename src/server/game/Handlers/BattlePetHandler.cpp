@@ -27,7 +27,7 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::Battle
     battlePetJournal.Trap = GetBattlePetMgr()->GetTrapLevel();
 
     for (auto itr : GetBattlePetMgr()->GetLearnedPets())
-        battlePetJournal.Pets.push_back(itr.PacketInfo);
+        battlePetJournal.Pets.push_back(&itr.JournalInfo);
 
     battlePetJournal.Slots = GetBattlePetMgr()->GetSlots();
     SendPacket(battlePetJournal.Write());
@@ -36,14 +36,14 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::Battle
 void WorldSession::HandleBattlePetSetBattleSlot(WorldPackets::BattlePet::BattlePetSetBattleSlot& battlePetSetBattleSlot)
 {
     if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetSetBattleSlot.PetGuid))
-        GetBattlePetMgr()->GetSlot(battlePetSetBattleSlot.Slot)->Pet = pet->PacketInfo;
+        GetBattlePetMgr()->GetSlot(battlePetSetBattleSlot.Slot)->Pet = pet->JournalInfo;
 }
 
 void WorldSession::HandleBattlePetModifyName(WorldPackets::BattlePet::BattlePetModifyName& battlePetModifyName)
 {
     if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetModifyName.PetGuid))
     {
-        pet->PacketInfo.Name = battlePetModifyName.Name;
+        pet->JournalInfo.Name = battlePetModifyName.Name;
 
         if (pet->SaveInfo != BATTLE_PET_NEW)
             pet->SaveInfo = BATTLE_PET_CHANGED;
@@ -60,9 +60,9 @@ void WorldSession::HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSet
     if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetSetFlags.PetGuid))
     {
         if (battlePetSetFlags.ControlType == 2) // 2 - apply
-            pet->PacketInfo.Flags |= battlePetSetFlags.Flags;
+            pet->JournalInfo.Flags |= battlePetSetFlags.Flags;
         else                                    // 3 - remove
-            pet->PacketInfo.Flags &= ~battlePetSetFlags.Flags;
+            pet->JournalInfo.Flags &= ~battlePetSetFlags.Flags;
 
         if (pet->SaveInfo != BATTLE_PET_NEW)
             pet->SaveInfo = BATTLE_PET_CHANGED;
@@ -81,6 +81,15 @@ void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummo
 
 void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
 {
-    /* TODO: SMSG_PET_BATTLE_FINALIZE_LOCATION
-             SMSG_PET_BATTLE_INITIAL_UPDATE*/
+    // TODO: handle locations properly
+    WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
+    finalLoc.LocationInfo.LocationResult = petBattleRequestWild.LocationInfo.LocationResult;
+    finalLoc.LocationInfo.BattleOrigin = petBattleRequestWild.LocationInfo.BattleOrigin;
+
+    for (uint8 i = 0; i < 2; ++i)
+        finalLoc.LocationInfo.PlayerPositions[i] = petBattleRequestWild.LocationInfo.PlayerPositions[i];
+
+    SendPacket(finalLoc.Write());
+
+    GetBattlePetMgr()->InitializePetBattle(petBattleRequestWild.TargetGuid);
 }

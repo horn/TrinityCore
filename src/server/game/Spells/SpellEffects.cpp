@@ -5971,7 +5971,7 @@ void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
     uint16 maxLearnedLevel = 0;
 
     for (auto pet : battlePetMgr->GetLearnedPets())
-        maxLearnedLevel = std::max(pet.PacketInfo.Level, maxLearnedLevel);
+        maxLearnedLevel = std::max(pet.JournalInfo.Level, maxLearnedLevel);
 
     // TODO: This means if you put your highest lvl pet into cage, you won't be able to uncage it again which is probably wrong.
     // We will need to store maxLearnedLevel somewhere to avoid this behaviour.

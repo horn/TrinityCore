@@ -26,7 +26,7 @@ namespace WorldPackets
 {
     namespace BattlePet
     {
-        struct BattlePet
+        struct BattlePetJournalInfo
         {
             ObjectGuid Guid;
             uint32 Species = 0;
@@ -47,7 +47,7 @@ namespace WorldPackets
 
         struct BattlePetSlot
         {
-            BattlePet Pet;
+            BattlePetJournalInfo Pet;
             uint32 CollarID = 0; // what's this?
             uint8 Index = 0;
             bool Locked = true;
@@ -62,7 +62,7 @@ namespace WorldPackets
 
             uint16 Trap = 0;
             std::vector<BattlePetSlot> Slots;
-            std::vector<BattlePet> Pets;
+            std::vector<BattlePetJournalInfo*> Pets;
             bool HasJournalLock = true;
         };
 
@@ -89,7 +89,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            std::vector<BattlePet> Pets;
+            std::vector<BattlePetJournalInfo> Pets;
             bool PetAdded = false;
         };
 
@@ -227,21 +227,21 @@ namespace WorldPackets
             uint16 CooldownRemaining = 0;
             uint16 LockdownRemaining = 0; // what's this?
             uint8 Slot = 0;
-            uint8 PBOID = 0; // what's this?
+            uint8 PBOID = 0; // what's this? unique for each pet
         };
 
         struct BattlePetAura
         {
             uint32 Id = 0;
             uint32 InstanceId = 0;
-            uint32 RoundsRemaining = 0;
+            int32 RoundsRemaining = 0; // -1 = infinite
             uint32 CurrentRound = 0;
             uint8 CasterPBOID = 0;
         };
 
-        struct BattlePetUpdate
+        struct PetBattlePetUpdateInfo
         {
-            BattlePet JournalInfo;
+            BattlePetJournalInfo* JournalInfo;
             uint32 NpcTeamMemberId = 0;
             uint16 StatusFlags = 0; // same as Pet.Flags?
             uint8 Slot = 0;
@@ -258,7 +258,7 @@ namespace WorldPackets
             uint16 RoundTimeSecs = 0;
             int8 FrontPet = 0;
             uint8 InputFlags = 0;
-            std::vector<BattlePetUpdate> Pets;
+            std::vector<PetBattlePetUpdateInfo> Pets;
         };
 
         struct EnviromentUpdate

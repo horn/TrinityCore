@@ -31,6 +31,7 @@ extern DB2Storage<BattlePetBreedQualityEntry>           sBattlePetBreedQualitySt
 extern DB2Storage<BattlePetBreedStateEntry>             sBattlePetBreedStateStore;
 extern DB2Storage<BattlePetSpeciesEntry>                sBattlePetSpeciesStore;
 extern DB2Storage<BattlePetSpeciesStateEntry>           sBattlePetSpeciesStateStore;
+extern DB2Storage<BattlePetSpeciesXAbilityEntry>        sBattlePetSpeciesXAbilityStore;
 extern DB2Storage<BroadcastTextEntry>                   sBroadcastTextStore;
 extern DB2Storage<CharStartOutfitEntry>                 sCharStartOutfitStore;
 extern DB2Storage<CinematicSequencesEntry>              sCinematicSequencesStore;

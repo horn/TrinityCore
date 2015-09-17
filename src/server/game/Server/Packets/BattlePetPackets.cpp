@@ -29,7 +29,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetSlot 
     return data;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePet const& pet)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetJournalInfo const& pet)
 {
     data << pet.Guid;
     data << uint32(pet.Species);
@@ -71,7 +71,7 @@ WorldPacket const* WorldPackets::BattlePet::BattlePetJournal::Write()
         _worldPacket << slot;
 
     for (auto const& pet : Pets)
-        _worldPacket << pet;
+        _worldPacket << *pet;
 
     _worldPacket.WriteBit(HasJournalLock);
     _worldPacket.FlushBits();
@@ -193,21 +193,21 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetAura 
     return data;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetUpdate const& pet)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattlePetUpdateInfo const& pet)
 {
     // TODO: use ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePet const& pet) if possible
-    data << pet.JournalInfo.Guid;
-    data << uint32(pet.JournalInfo.Species);
-    data << uint32(pet.JournalInfo.CreatureID);
-    data << uint32(pet.JournalInfo.CollarID);
-    data << uint16(pet.JournalInfo.Level);
-    data << uint16(pet.JournalInfo.Exp);
-    data << uint32(pet.JournalInfo.Health);
-    data << uint32(pet.JournalInfo.MaxHealth);
-    data << uint32(pet.JournalInfo.Power);
-    data << uint32(pet.JournalInfo.Speed);
+    data << pet.JournalInfo->Guid;
+    data << uint32(pet.JournalInfo->Species);
+    data << uint32(pet.JournalInfo->CreatureID);
+    data << uint32(pet.JournalInfo->CollarID);
+    data << uint16(pet.JournalInfo->Level);
+    data << uint16(pet.JournalInfo->Exp);
+    data << uint32(pet.JournalInfo->Health);
+    data << uint32(pet.JournalInfo->MaxHealth);
+    data << uint32(pet.JournalInfo->Power);
+    data << uint32(pet.JournalInfo->Speed);
     data << uint32(pet.NpcTeamMemberId);
-    data << uint16(pet.JournalInfo.Quality);
+    data << uint16(pet.JournalInfo->Quality);
     data << uint16(pet.StatusFlags);
     data << uint8(pet.Slot);
     data << uint32(pet.Abilities.size());
@@ -226,9 +226,9 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetUpdat
         data << int32(state.second);
     }
 
-    data.WriteBits(pet.JournalInfo.Name.size(), 7);
+    data.WriteBits(pet.JournalInfo->Name.size(), 7);
     data.FlushBits();
-    data.WriteString(pet.JournalInfo.Name);
+    data.WriteString(pet.JournalInfo->Name);
 
     return data;
 }
