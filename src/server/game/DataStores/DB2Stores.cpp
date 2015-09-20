@@ -207,6 +207,7 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     LOAD_DB2(sBarberShopStyleStore);
     LOAD_DB2(sBattlePetSpeciesStore);
     LOAD_DB2(sBattlePetSpeciesStateStore);
+    LOAD_DB2(sBattlePetSpeciesXAbilityStore);
     LOAD_DB2(sBroadcastTextStore);
     LOAD_DB2(sCharStartOutfitStore);
     LOAD_DB2(sChrClassesXPowerTypesStore);

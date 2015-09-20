@@ -62,7 +62,7 @@ namespace WorldPackets
 
             uint16 Trap = 0;
             std::vector<BattlePetSlot> Slots;
-            std::vector<BattlePetJournalInfo*> Pets;
+            std::vector<BattlePetJournalInfo> Pets;
             bool HasJournalLock = true;
         };
 
@@ -200,6 +200,17 @@ namespace WorldPackets
             Position PlayerPositions[2];
         };
 
+        class PetBattleRequestPvp final : public ClientPacket
+        {
+        public:
+            PetBattleRequestPvp(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REQUEST_PVP, std::move(packet)) { }
+
+            void Read() override;
+
+            ObjectGuid TargetGuid;
+            LocationInfo LocationInfo;
+        };
+
         class PetBattleRequestWild final : public ClientPacket
         {
         public:
@@ -227,7 +238,7 @@ namespace WorldPackets
             uint16 CooldownRemaining = 0;
             uint16 LockdownRemaining = 0; // what's this?
             uint8 Slot = 0;
-            uint8 PBOID = 0; // what's this? unique for each pet
+            uint8 PBOID = 0; // PetBattleObjectID?
         };
 
         struct BattlePetAura
@@ -243,7 +254,7 @@ namespace WorldPackets
         {
             BattlePetJournalInfo* JournalInfo;
             uint32 NpcTeamMemberId = 0;
-            uint16 StatusFlags = 0; // same as Pet.Flags?
+            uint16 StatusFlags = 0;
             uint8 Slot = 0;
             std::vector<BattlePetAbility> Abilities;
             std::vector<BattlePetAura> Auras;
@@ -285,7 +296,49 @@ namespace WorldPackets
             uint8 ForfeitPenalty = 10;
             ObjectGuid InitialWildPetGuid;
             bool IsPvp = false;
-            bool CanAwardXP = true;
+            bool CanAwardXP = false;
+        };
+
+        class PetBattleFinalNotify final : public ClientPacket
+        {
+        public:
+            PetBattleFinalNotify(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_FINAL_NOTIFY, std::move(packet)) { }
+
+            void Read() override { }
+        };
+
+        class PetBattleInput final : public ClientPacket
+        {
+        public:
+            PetBattleInput(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_INPUT, std::move(packet)) { }
+
+            void Read() override;
+
+            uint8 MoveType = 0;
+            int8 NewFrontPet = -1;
+            uint8 DebugFlags = 0;
+            uint8 BattleInterrupted = 0;
+            uint32 AbilityID = 0;
+            int32 Round = -1;
+            bool IgnoreAbandonPenalty = false;
+        };
+
+        class PetBattleQuitNotify final : public ClientPacket
+        {
+        public:
+            PetBattleQuitNotify(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_QUIT_NOTIFY, std::move(packet)) { }
+
+            void Read() override { }
+        };
+
+        class PetBattleReplaceFrontPet final : public ClientPacket
+        {
+        public:
+            PetBattleReplaceFrontPet(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REPLACE_FRONT_PET, std::move(packet)) { }
+
+            void Read() override;
+
+            uint8 FrontPet = 0;
         };
     }
 }

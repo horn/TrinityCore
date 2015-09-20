@@ -102,7 +102,7 @@ void BattlePetMgr::Initialize()
 
     // note: this logic does not apply to species 354, it was a test pet with all slots = 0 (npc id = 59216)
     for (auto itr : sBattlePetSpeciesXAbilityStore)
-        _abilitiesPerSpecies[itr->SpeciesID][itr->Level <= 4 ? 0 : 1][itr->Slot] = itr->ID;
+        _abilitiesPerSpecies[itr->SpeciesID][itr->Level < 10 ? 0 : 1][itr->Slot] = itr->AbilityID;
 
     LoadAvailablePetBreeds();
     LoadDefaultPetQualities();
@@ -485,17 +485,13 @@ void BattlePetMgr::SendError(BattlePetError error, uint32 creatureId)
     _owner->SendPacket(battlePetError.Write());
 }
 
-// Pet Battles
-void BattlePetMgr::InitializePetBattle(ObjectGuid target)
+WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetPlayerUpdateInfo()
 {
-    WorldPackets::BattlePet::PetBattleInitialUpdate init;
-
-    // TODO: fill both players (or player and npc player) properly
-    WorldPackets::BattlePet::PlayerUpdate player1;
-    player1.Guid = _owner->GetPlayer()->GetGUID();
-    player1.TrapAbilityID = TrapSpells[_trapLevel];
-    player1.TrapStatus = 4; // ?
-    player1.InputFlags = 6; // ?
+    WorldPackets::BattlePet::PlayerUpdate player;
+    player.Guid = _owner->GetPlayer()->GetGUID();
+    player.TrapAbilityID = TrapSpells[_trapLevel];
+    player.TrapStatus = 4; // ?
+    player.InputFlags = 6; // ?
 
     for (auto slot : _slots)
     {
@@ -508,7 +504,7 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
             pet->UpdateInfo.Slot = slot.Index;
             pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
 
-            // TODO: find better solution if possible
+            // TODO: find better solution if possible and set proper PBOID (increment it to be unique for each pet in battle)
             WorldPackets::BattlePet::BattlePetAbility ability;
             if (pet->JournalInfo.Level >= 10 && (pet->JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_1_ROW_2))
                 ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][1][0];
@@ -524,6 +520,7 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
                 else
                     ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][0][1];
 
+                ability.Slot = 1;
                 pet->UpdateInfo.Abilities.push_back(ability);
 
                 if (pet->JournalInfo.Level >= 4)
@@ -533,12 +530,13 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
                     else
                         ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][0][2];
 
+                    ability.Slot = 2;
                     pet->UpdateInfo.Abilities.push_back(ability);
                 }
             }
 
             pet->UpdateInfo.States[STATE_STAT_POWER] = pet->JournalInfo.Power;
-            pet->UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA);
+            pet->UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
             pet->UpdateInfo.States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
             pet->UpdateInfo.States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
             // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
@@ -546,20 +544,40 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
             // other states (pve enemies)
 
             // fill auras and other stuff
-            player1.Pets.push_back(pet->UpdateInfo);
+            player.Pets.push_back(pet->UpdateInfo);
         }
     }
 
-    init.PlayerUpdate[0] = player1;
+    return player;
+}
 
-    /* TODO: create fake player in case of pve, get other player's data in case of pvp
-             generate pet teams (prepared or random) - next big sql awaits, yay!
-             send enviros*/
+// Pet Battles
+void BattlePetMgr::InitializePetBattle(ObjectGuid target)
+{
+    WorldPackets::BattlePet::PetBattleInitialUpdate init;
+    init.PlayerUpdate[0] = GetPlayerUpdateInfo();
+
+    if (target.IsPlayer())
+    {
+        // CMSG_PET_BATTLE_REQUEST_PVP (battle pet duel) or Find Battle
+        // TODO: send packet to the opponent too
+        if (Player* opponent = ObjectAccessor::FindPlayer(target))
+            init.PlayerUpdate[1] = opponent->GetSession()->GetBattlePetMgr()->GetPlayerUpdateInfo();
+    }
+    else
+    {
+        // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
+        // fake player - NYI
+        // generate pet teams (prepared or random) - next big sql awaits, yay!
+        // find out what to do with BattlePetNPCTeamMember.db2
+        return;
+    }
+    
+    // TODO: send enviros and set other fields properly
 
     init.WaitingForFrontPetsMaxSecs = 30;
     init.PvpMaxRoundTime = 30;
     init.CurrentPetBattleState = 1; // ?
-    init.InitialWildPetGuid = target;
 
-    //_owner->SendPacket(init.Write());
+    _owner->SendPacket(init.Write());
 }

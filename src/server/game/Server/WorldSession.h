@@ -138,7 +138,12 @@ namespace WorldPackets
         class BattlePetSetFlags;
         class BattlePetSummon;
         class CageBattlePet;
+        class PetBattleFinalNotify;
+        class PetBattleInput;
+        class PetBattleQuitNotify;
+        class PetBattleRequestPvp;
         class PetBattleRequestWild;
+        class PetBattleReplaceFrontPet;
     }
 
     namespace BlackMarket
@@ -1668,7 +1673,12 @@ class WorldSession
         void HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSetFlags& battlePetSetFlags);
         void HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummon& battlePetSummon);
         void HandleCageBattlePet(WorldPackets::BattlePet::CageBattlePet& cageBattlePet);
+        void HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& petBattleFinalNotify);
+        void HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput);
+        void HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& petBattleQuitNotify);
+        void HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleRequestPvp& petBattleRequestPvp);
         void HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild);
+        void HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet);
 
         // Warden
         void HandleWardenData(WorldPackets::Warden::WardenData& packet);

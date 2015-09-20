@@ -27,7 +27,7 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::Battle
     battlePetJournal.Trap = GetBattlePetMgr()->GetTrapLevel();
 
     for (auto itr : GetBattlePetMgr()->GetLearnedPets())
-        battlePetJournal.Pets.push_back(&itr.JournalInfo);
+        battlePetJournal.Pets.push_back(itr.JournalInfo);
 
     battlePetJournal.Slots = GetBattlePetMgr()->GetSlots();
     SendPacket(battlePetJournal.Write());
@@ -79,17 +79,46 @@ void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummo
     GetBattlePetMgr()->SummonPet(battlePetSummon.PetGuid);
 }
 
+void WorldSession::HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleRequestPvp& petBattleRequestPvp)
+{
+    // TODO: handle locations properly
+    WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
+    finalLoc.LocationInfo = petBattleRequestPvp.LocationInfo;
+
+    SendPacket(finalLoc.Write());
+
+    GetBattlePetMgr()->InitializePetBattle(petBattleRequestPvp.TargetGuid);
+}
+
 void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
 {
     // TODO: handle locations properly
     WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
-    finalLoc.LocationInfo.LocationResult = petBattleRequestWild.LocationInfo.LocationResult;
-    finalLoc.LocationInfo.BattleOrigin = petBattleRequestWild.LocationInfo.BattleOrigin;
-
-    for (uint8 i = 0; i < 2; ++i)
-        finalLoc.LocationInfo.PlayerPositions[i] = petBattleRequestWild.LocationInfo.PlayerPositions[i];
+    finalLoc.LocationInfo = petBattleRequestWild.LocationInfo;
 
     SendPacket(finalLoc.Write());
 
     GetBattlePetMgr()->InitializePetBattle(petBattleRequestWild.TargetGuid);
+}
+
+void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& petBattleFinalNotify)
+{
+
+}
+
+void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput)
+{
+
+}
+
+void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& petBattleQuitNotify)
+{
+
+}
+
+void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet)
+{
+    // SMSG_PET_BATTLE_FIRST_ROUND or SMSG_PET_BATTLE_REPLACEMENTS_MADE
+    // PetBattleEffectType: 4
+    // Effect.Petx = petBattleReplaceFrontPet.FrontPet
 }

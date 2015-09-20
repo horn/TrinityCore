@@ -71,7 +71,7 @@ WorldPacket const* WorldPackets::BattlePet::BattlePetJournal::Write()
         _worldPacket << slot;
 
     for (auto const& pet : Pets)
-        _worldPacket << *pet;
+        _worldPacket << pet;
 
     _worldPacket.WriteBit(HasJournalLock);
     _worldPacket.FlushBits();
@@ -267,14 +267,27 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::EnviromentUpda
     return data;
 }
 
+ByteBuffer& operator>>(ByteBuffer& buf, WorldPackets::BattlePet::LocationInfo& locationInfo)
+{
+    buf >> locationInfo.LocationResult;
+    buf >> locationInfo.BattleOrigin.PositionXYZOStream();
+
+    for (uint8 i = 0; i < 2; ++i)
+        buf >> locationInfo.PlayerPositions[i].PositionXYZStream();
+
+    return buf;
+}
+
+void WorldPackets::BattlePet::PetBattleRequestPvp::Read()
+{
+    _worldPacket >> TargetGuid;
+    _worldPacket >> LocationInfo;
+}
+
 void WorldPackets::BattlePet::PetBattleRequestWild::Read()
 {
     _worldPacket >> TargetGuid;
-    _worldPacket >> LocationInfo.LocationResult;
-    _worldPacket >> LocationInfo.BattleOrigin.PositionXYZOStream();
-    
-    for (uint8 i = 0; i < 2; ++i)
-        _worldPacket >> LocationInfo.PlayerPositions[i].PositionXYZStream();
+    _worldPacket >> LocationInfo;
 }
 
 WorldPacket const* WorldPackets::BattlePet::PetBattleFinalizeLocation::Write()
@@ -309,4 +322,20 @@ WorldPacket const* WorldPackets::BattlePet::PetBattleInitialUpdate::Write()
     _worldPacket.FlushBits();
 
     return &_worldPacket;
+}
+
+void WorldPackets::BattlePet::PetBattleInput::Read()
+{
+    _worldPacket >> MoveType;
+    _worldPacket >> NewFrontPet;
+    _worldPacket >> DebugFlags;
+    _worldPacket >> BattleInterrupted;
+    _worldPacket >> AbilityID;
+    _worldPacket >> Round;
+    IgnoreAbandonPenalty = _worldPacket.ReadBit();
+}
+
+void WorldPackets::BattlePet::PetBattleReplaceFrontPet::Read()
+{
+    _worldPacket >> FrontPet;
 }

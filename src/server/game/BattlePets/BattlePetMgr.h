@@ -182,6 +182,8 @@ public:
 
     void InitializePetBattle(ObjectGuid target);
 
+    WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo();
+
 private:
     WorldSession* _owner;
     uint16 _trapLevel = 0;
