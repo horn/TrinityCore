@@ -142,6 +142,7 @@ namespace WorldPackets
         class PetBattleInput;
         class PetBattleQuitNotify;
         class PetBattleRequestPvp;
+        class PetBattleRequestUpdate;
         class PetBattleRequestWild;
         class PetBattleReplaceFrontPet;
     }
@@ -1677,6 +1678,7 @@ class WorldSession
         void HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput);
         void HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& petBattleQuitNotify);
         void HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleRequestPvp& petBattleRequestPvp);
+        void HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBattleRequestUpdate& petBattleRequestUpdate);
         void HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild);
         void HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet);
 

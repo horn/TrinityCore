@@ -565,7 +565,7 @@ void OpcodeTable::Initialize()
     DEFINE_HANDLER(CMSG_PET_BATTLE_QUIT_NOTIFY,                             STATUS_LOGGEDIN,  PROCESS_INPLACE,      WorldPackets::BattlePet::PetBattleQuitNotify, &WorldSession::HandlePetBattleQuitNotify);
     DEFINE_HANDLER(CMSG_PET_BATTLE_REPLACE_FRONT_PET,                       STATUS_LOGGEDIN,  PROCESS_INPLACE,      WorldPackets::BattlePet::PetBattleReplaceFrontPet, &WorldSession::HandlePetBattleReplaceFrontPet);
     DEFINE_HANDLER(CMSG_PET_BATTLE_REQUEST_PVP,                             STATUS_LOGGEDIN,  PROCESS_INPLACE,      WorldPackets::BattlePet::PetBattleRequestPvp, &WorldSession::HandlePetBattleRequestPvp);
-    DEFINE_HANDLER(CMSG_PET_BATTLE_REQUEST_UPDATE,                          STATUS_UNHANDLED, PROCESS_INPLACE,      WorldPackets::Null, &WorldSession::Handle_NULL);
+    DEFINE_HANDLER(CMSG_PET_BATTLE_REQUEST_UPDATE,                          STATUS_LOGGEDIN,  PROCESS_INPLACE,      WorldPackets::BattlePet::PetBattleRequestUpdate, &WorldSession::HandlePetBattleRequestUpdate);
     DEFINE_HANDLER(CMSG_PET_BATTLE_REQUEST_WILD,                            STATUS_LOGGEDIN,  PROCESS_INPLACE,      WorldPackets::BattlePet::PetBattleRequestWild, &WorldSession::HandlePetBattleRequestWild);
     DEFINE_HANDLER(CMSG_PET_BATTLE_SCRIPT_ERROR_NOTIFY,                     STATUS_UNHANDLED, PROCESS_INPLACE,      WorldPackets::Null, &WorldSession::Handle_NULL);
     DEFINE_HANDLER(CMSG_PET_CANCEL_AURA,                                    STATUS_LOGGEDIN,  PROCESS_THREADUNSAFE, WorldPackets::Spells::PetCancelAura, &WorldSession::HandlePetCancelAuraOpcode);

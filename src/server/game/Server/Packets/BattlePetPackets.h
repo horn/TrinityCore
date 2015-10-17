@@ -285,8 +285,8 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PlayerUpdate PlayerUpdate[2];
-            EnviromentUpdate EnviromentUpdate[3];
+            PlayerUpdate PlayerUpdate[2] = { };
+            EnviromentUpdate EnviromentUpdate[3] = { };
             uint16 WaitingForFrontPetsMaxSecs = 0;
             uint16 PvpMaxRoundTime = 0;
             uint32 CurrentRound = 0;
@@ -339,6 +339,79 @@ namespace WorldPackets
             void Read() override;
 
             uint8 FrontPet = 0;
+        };
+
+        class PetBattleRequestUpdate final : public ClientPacket
+        {
+        public:
+            PetBattleRequestUpdate(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REQUEST_UPDATE, std::move(packet)) { }
+
+            void Read() override;
+
+            bool Canceled = false;
+            ObjectGuid TargetGUID;
+        };
+
+        struct PetBattleEffectTarget
+        {
+            uint8 Type = 0; // should be enum
+            uint8 Petx = 0;
+            uint32 AuraInstanceID = 0;
+            uint32 AuraAbilityID = 0;
+            int32 RoundsRemaining = 0;
+            int32 CurrentRound = 0;
+            uint32 StateID = 0;
+            int32 StateValue = 0;
+            int32 Health = 0;
+            int32 NewStatValue = 0;
+            int32 TriggerAbilityID = 0;
+            int32 ChangedAbilityID = 0;
+            int32 CooldownRemaining = 0;
+            int32 LockdownRemaining = 0;
+            int32 BroadcastTextID = 0;
+        };
+
+        struct PetBattleEffect
+        {
+            uint32 AbilityEffectID = 0;
+            uint16 Flags = 0;
+            uint16 SourceAuraInstanceID = 0;
+            uint16 TurnInstanceID = 0;
+            int8 PetBattleEffectType = 0;
+            uint8 CasterPBOID = 0;
+            uint8 StackDepth = 0;
+            std::vector<PetBattleEffectTarget> Targets;
+        };
+
+        struct PetBattleActiveAbility
+        {
+            int32 AbilityID = 0;
+            int16 CooldownRemaining = 0;
+            int16 LockdownRemaining = 0;
+            int8 AbilityIndex = 0;
+            uint8 Pboid = 0;
+        };
+
+        struct PetBattleRoundResult
+        {
+            int32 CurRound = 0;
+            int8 NextPetBattleState = 0;
+            std::vector<PetBattleEffect> Effects;
+            std::vector<int8> PetXDied;
+            std::vector<PetBattleActiveAbility> Cooldowns;
+            uint8 NextInputFlags[2] = {};
+            int8 NextTrapStatus[2] = {};
+            uint16 RoundTimeSecs[2] = {};
+        };
+
+        class PetBattleFirstRound final : public ServerPacket
+        {
+        public:
+            PetBattleFirstRound() : ServerPacket(SMSG_PET_BATTLE_FIRST_ROUND) { }
+
+            WorldPacket const* Write() override;
+
+            PetBattleRoundResult MsgData;
         };
     }
 }

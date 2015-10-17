@@ -339,3 +339,41 @@ void WorldPackets::BattlePet::PetBattleReplaceFrontPet::Read()
 {
     _worldPacket >> FrontPet;
 }
+
+void WorldPackets::BattlePet::PetBattleRequestUpdate::Read()
+{
+    _worldPacket >> TargetGUID;
+    Canceled = _worldPacket.ReadBit();
+}
+
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRoundResult const& round)
+{
+    data << int32(round.CurRound);
+    data << int8(round.NextPetBattleState);
+
+    data << int32(round.Effects.size());
+    for (uint8 i = 0; i < 2; ++i)
+    {
+        data << uint8(round.NextInputFlags[i]);
+        data << int8(round.NextTrapStatus[i]);
+        data << uint16(round.RoundTimeSecs[i]);
+    }
+
+    data << int32(round.Cooldowns.size());
+
+    for (auto const& effect : round.Effects)
+    {
+        // todo
+    }
+
+    for (auto const& ability : round.Cooldowns)
+    {
+        // use byte buffer operator
+    }
+
+    data.WriteBits(round.PetXDied.size(), 3);
+    for (int8 pet : round.PetXDied)
+        data << int8(pet);
+
+    return data;
+}

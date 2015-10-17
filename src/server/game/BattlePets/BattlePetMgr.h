@@ -18,8 +18,8 @@
 #ifndef BattlePetMgr_h__
 #define BattlePetMgr_h__
 
-#include "DB2Stores.h"
 #include "BattlePetPackets.h"
+#include "PetBattle.h"
 
 enum BattlePetMisc
 {
@@ -183,9 +183,13 @@ public:
     void InitializePetBattle(ObjectGuid target);
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo();
+    WorldPackets::BattlePet::PlayerUpdate GetWildPetUpdateInfo(Creature* creature) const;
+
+    PetBattle* GetPetBattle() const { return _battle; }
 
 private:
     WorldSession* _owner;
+    PetBattle* _battle;
     uint16 _trapLevel = 0;
     std::unordered_map<uint64 /*battlePetGuid*/, BattlePet> _pets;
     std::vector<WorldPackets::BattlePet::BattlePetSlot> _slots;

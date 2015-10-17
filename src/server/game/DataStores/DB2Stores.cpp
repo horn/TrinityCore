@@ -508,6 +508,9 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     for (HeirloomEntry const* heirloom : sHeirloomStore)
         _heirlooms[heirloom->ItemID] = heirloom;
 
+    for (BattlePetSpeciesEntry const* species : sBattlePetSpeciesStore)
+        _battlePetSpecies[species->CreatureID] = species;
+
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)
     {
@@ -873,4 +876,13 @@ bool DB2Manager::MountTypeXCapabilityEntryComparator::Compare(MountTypeXCapabili
     if (left->MountTypeID == right->MountTypeID)
         return left->OrderIndex < right->OrderIndex;
     return left->ID < right->ID;
+}
+
+BattlePetSpeciesEntry const* DB2Manager::GetBattlePetSpeciesByCreatureId(uint32 creatureId) const
+{
+    auto itr = _battlePetSpecies.find(creatureId);
+    if (itr != _battlePetSpecies.end())
+        return itr->second;
+
+    return nullptr;
 }

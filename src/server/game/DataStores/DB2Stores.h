@@ -162,6 +162,7 @@ public:
     typedef std::unordered_map<uint32, std::vector<SpellPowerEntry const*>> SpellPowerContainer;
     typedef std::unordered_map<uint32, std::unordered_map<uint32, std::vector<SpellPowerEntry const*>>> SpellPowerDifficultyContainer;
     typedef std::unordered_set<uint32> ToyItemIdsContainer;
+    typedef std::unordered_map<uint32, BattlePetSpeciesEntry const*> BattlePetSpeciesContainer;
 
     static DB2Manager& Instance()
     {
@@ -198,6 +199,7 @@ public:
     std::vector<SpecializationSpellsEntry const*> const* GetSpecializationSpells(uint32 specId) const;
     std::vector<SpellPowerEntry const*> GetSpellPowers(uint32 spellId, Difficulty difficulty = DIFFICULTY_NONE, bool* hasDifficultyPowers = nullptr) const;
     bool IsToyItem(uint32 toy) const;
+    BattlePetSpeciesEntry const* GetBattlePetSpeciesByCreatureId(uint32 creatureId) const;
 
 private:
     StorageMap _stores;
@@ -224,6 +226,7 @@ private:
     SpellPowerContainer _spellPowers;
     SpellPowerDifficultyContainer _spellPowerDifficulties;
     ToyItemIdsContainer _toys;
+    BattlePetSpeciesContainer _battlePetSpecies;
 };
 
 #define sDB2Manager DB2Manager::Instance()

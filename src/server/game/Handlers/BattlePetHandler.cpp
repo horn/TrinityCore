@@ -121,4 +121,12 @@ void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBa
     // SMSG_PET_BATTLE_FIRST_ROUND or SMSG_PET_BATTLE_REPLACEMENTS_MADE
     // PetBattleEffectType: 4
     // Effect.Petx = petBattleReplaceFrontPet.FrontPet
+
+    if (PetBattle* battle = GetBattlePetMgr()->GetPetBattle())
+        battle->Update(petBattleReplaceFrontPet.FrontPet);
+}
+
+void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBattleRequestUpdate& petBattleRequestPvp)
+{
+    // not sure for what is it used
 }

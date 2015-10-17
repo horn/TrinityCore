@@ -551,6 +551,25 @@ WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetPlayerUpdateInfo()
     return player;
 }
 
+WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetWildPetUpdateInfo(Creature* creature) const
+{
+    WorldPackets::BattlePet::PlayerUpdate update;
+
+    if (BattlePetSpeciesEntry const* species = sDB2Manager.GetBattlePetSpeciesByCreatureId(creature->GetEntry()))
+    {
+        ///@todo: get info for all pets (usually not only one wild pet)
+        WorldPackets::BattlePet::PetBattlePetUpdateInfo pet;
+        pet.JournalInfo->Species = species->ID;
+        pet.JournalInfo->CreatureID = creature->GetDisplayId(); // really should be in JournalInfo CreatureID instead of DisplayID?
+        pet.JournalInfo->CollarID = 0; // unknown
+        pet.JournalInfo->Level = creature->GetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL); // TODO: add this field to wild pets
+
+        update.Pets.push_back(pet);
+    }
+
+    return update;
+}
+
 // Pet Battles
 void BattlePetMgr::InitializePetBattle(ObjectGuid target)
 {
@@ -563,6 +582,7 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
         // TODO: send packet to the opponent too
         if (Player* opponent = ObjectAccessor::FindPlayer(target))
             init.PlayerUpdate[1] = opponent->GetSession()->GetBattlePetMgr()->GetPlayerUpdateInfo();
+        init.IsPvp = true;
     }
     else
     {
@@ -570,7 +590,10 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
         // fake player - NYI
         // generate pet teams (prepared or random) - next big sql awaits, yay!
         // find out what to do with BattlePetNPCTeamMember.db2
-        return;
+        init.IsPvp = false;
+        init.InitialWildPetGuid = target;
+        if (Creature* wildPet = ObjectAccessor::GetCreature(*_owner->GetPlayer(), target))
+            init.PlayerUpdate[1] = GetWildPetUpdateInfo(wildPet);
     }
     
     // TODO: send enviros and set other fields properly
@@ -578,6 +601,8 @@ void BattlePetMgr::InitializePetBattle(ObjectGuid target)
     init.WaitingForFrontPetsMaxSecs = 30;
     init.PvpMaxRoundTime = 30;
     init.CurrentPetBattleState = 1; // ?
+
+    _battle = new PetBattle(_owner->GetPlayer(), target);
 
     _owner->SendPacket(init.Write());
 }
