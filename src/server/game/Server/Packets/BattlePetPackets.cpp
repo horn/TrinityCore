@@ -346,6 +346,17 @@ void WorldPackets::BattlePet::PetBattleRequestUpdate::Read()
     Canceled = _worldPacket.ReadBit();
 }
 
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleActiveAbility const& ability)
+{
+    data << int32(ability.AbilityID);
+    data << int16(ability.CooldownRemaining);
+    data << int16(ability.LockdownRemaining);
+    data << uint8(ability.AbilityIndex);
+    data << uint8(ability.Pboid);
+
+    return data;
+}
+
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRoundResult const& round)
 {
     data << int32(round.CurRound);
@@ -363,17 +374,74 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRound
 
     for (auto const& effect : round.Effects)
     {
-        // todo
+        data << uint32(effect.AbilityEffectID);
+        data << uint16(effect.Flags);
+        data << uint16(effect.SourceAuraInstanceID);
+        data << uint16(effect.TurnInstanceID);
+        data << int8(effect.PetBattleEffectType);
+        data << uint8(effect.CasterPBOID);
+        data << uint8(effect.StackDepth);
+
+        data << uint32(effect.Targets.size());
+
+        for (auto const& target : effect.Targets)
+        {
+            data.WriteBits(target.Type, 3);
+            data << uint8(target.Petx);
+
+            switch (target.Type)
+            {
+                case 1:
+                    data << int32(target.StateID);
+                    data << int32(target.StateValue);
+                    break;
+                case 2:
+                    data << int32(target.BroadcastTextID);
+                    break;
+                case 3:
+                    data << int32(target.ChangedAbilityID);
+                    data << int32(target.CooldownRemaining);
+                    data << int32(target.LockdownRemaining);
+                    break;
+                case 4:
+                    data << int32(target.NewStatValue);
+                    break;
+                case 5:
+                    data << int32(target.AuraInstanceID);
+                    data << int32(target.AuraAbilityID);
+                    data << int32(target.RoundsRemaining);
+                    data << int32(target.CurrentRound);
+                    break;
+                case 6:
+                    data << int32(target.Health);
+                    break;
+                case 7:
+                    data << int32(target.TriggerAbilityID);
+                    break;
+            }
+        }
     }
 
     for (auto const& ability : round.Cooldowns)
-    {
-        // use byte buffer operator
-    }
+        data << ability;
 
     data.WriteBits(round.PetXDied.size(), 3);
     for (int8 pet : round.PetXDied)
         data << int8(pet);
 
     return data;
+}
+
+WorldPacket const* WorldPackets::BattlePet::PetBattleFirstRound::Write()
+{
+    _worldPacket << MsgData;
+    
+    return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::BattlePet::PetBattleReplacementsMade::Write()
+{
+    _worldPacket << MsgData;
+
+    return &_worldPacket;
 }

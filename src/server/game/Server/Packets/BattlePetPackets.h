@@ -399,9 +399,9 @@ namespace WorldPackets
             std::vector<PetBattleEffect> Effects;
             std::vector<int8> PetXDied;
             std::vector<PetBattleActiveAbility> Cooldowns;
-            uint8 NextInputFlags[2] = {};
-            int8 NextTrapStatus[2] = {};
-            uint16 RoundTimeSecs[2] = {};
+            uint8 NextInputFlags[2] = { };
+            int8 NextTrapStatus[2] = { };
+            uint16 RoundTimeSecs[2] = { };
         };
 
         class PetBattleFirstRound final : public ServerPacket
@@ -412,6 +412,25 @@ namespace WorldPackets
             WorldPacket const* Write() override;
 
             PetBattleRoundResult MsgData;
+        };
+
+        class PetBattleReplacementsMade final : public ServerPacket
+        {
+        public:
+            PetBattleReplacementsMade() : ServerPacket(SMSG_PET_BATTLE_REPLACEMENTS_MADE) { }
+
+            WorldPacket const* Write() override;
+
+            PetBattleRoundResult MsgData;
+        };
+
+        //SMSG_PET_BATTLE_FINISHED
+        class PetBattleFinished final : public ServerPacket
+        {
+        public:
+            PetBattleFinished() : ServerPacket(SMSG_PET_BATTLE_FINISHED, 0) { }
+
+            WorldPacket const* Write() override { return &_worldPacket; }
         };
     }
 }

@@ -19,6 +19,7 @@
 #define PetBattle_h__
 
 #include "Player.h"
+#include "BattlePetPackets.h"
 
 class PetBattle
 {
@@ -27,6 +28,7 @@ public:
 
     Player* GetBattleInvoker() const { return _invoker; }
 
+    void Initialize();
     void Update(uint8 frontPet);
 
     void SendFirstRound();
@@ -38,6 +40,8 @@ private:
 
     bool _isPvP = false;
     uint8 _round = 0;
+
+    std::unordered_map<uint8, WorldPackets::BattlePet::PetBattlePetUpdateInfo> _pets;
 };
 
 #endif // PetBattle_h__

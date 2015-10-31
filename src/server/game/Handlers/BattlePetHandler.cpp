@@ -103,12 +103,15 @@ void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattle
 
 void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& petBattleFinalNotify)
 {
-
+    // SMSG_PET_BATTLE_FINISHED
+    WorldPackets::BattlePet::PetBattleFinished finished;
+    SendPacket(finished.Write());
 }
 
 void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput)
 {
-
+    // SMSG_PET_BATTLE_ROUND_RESULT when MoveType = 1
+    // SMSG_PET_BATTLE_FINAL_ROUND when MoveType = 4, maybe
 }
 
 void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& petBattleQuitNotify)

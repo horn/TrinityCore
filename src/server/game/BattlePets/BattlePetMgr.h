@@ -179,7 +179,6 @@ public:
     void SendError(BattlePetError error, uint32 creatureId);
 
     // Pet Battles
-
     void InitializePetBattle(ObjectGuid target);
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo();

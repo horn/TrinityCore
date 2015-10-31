@@ -570,39 +570,11 @@ WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetWildPetUpdateInfo(Creatur
     return update;
 }
 
-// Pet Battles
 void BattlePetMgr::InitializePetBattle(ObjectGuid target)
 {
-    WorldPackets::BattlePet::PetBattleInitialUpdate init;
-    init.PlayerUpdate[0] = GetPlayerUpdateInfo();
-
-    if (target.IsPlayer())
+    if (!_battle)
     {
-        // CMSG_PET_BATTLE_REQUEST_PVP (battle pet duel) or Find Battle
-        // TODO: send packet to the opponent too
-        if (Player* opponent = ObjectAccessor::FindPlayer(target))
-            init.PlayerUpdate[1] = opponent->GetSession()->GetBattlePetMgr()->GetPlayerUpdateInfo();
-        init.IsPvp = true;
+        _battle = new PetBattle(_owner->GetPlayer(), target);
+        _battle->Initialize();
     }
-    else
-    {
-        // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
-        // fake player - NYI
-        // generate pet teams (prepared or random) - next big sql awaits, yay!
-        // find out what to do with BattlePetNPCTeamMember.db2
-        init.IsPvp = false;
-        init.InitialWildPetGuid = target;
-        if (Creature* wildPet = ObjectAccessor::GetCreature(*_owner->GetPlayer(), target))
-            init.PlayerUpdate[1] = GetWildPetUpdateInfo(wildPet);
-    }
-    
-    // TODO: send enviros and set other fields properly
-
-    init.WaitingForFrontPetsMaxSecs = 30;
-    init.PvpMaxRoundTime = 30;
-    init.CurrentPetBattleState = 1; // ?
-
-    _battle = new PetBattle(_owner->GetPlayer(), target);
-
-    _owner->SendPacket(init.Write());
 }
