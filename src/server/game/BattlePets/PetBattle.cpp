@@ -15,40 +15,117 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "PetBattle.h"
 #include "BattlePetMgr.h"
+#include "Creature.h"
 #include "ObjectAccessor.h"
+#include "PetBattle.h"
+#include "Player.h"
 
-void PetBattle::Initialize()
+ // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
+PetBattle::PetBattle(Player* player, ObjectGuid target)
 {
-    std::cout << "created instance for player " << _invoker->GetName() << std::endl;
+    uint8 PBOID = 0;
+    _participants[0].player = player;
+    _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID);
 
-    WorldPackets::BattlePet::PetBattleInitialUpdate init;
-    init.PlayerUpdate[0] = _invoker->GetSession()->GetBattlePetMgr()->GetPlayerUpdateInfo();
-
-    if (_target.IsPlayer())
+    if (target.IsPlayer())
     {
         // CMSG_PET_BATTLE_REQUEST_PVP (battle pet duel) or Find Battle
         // TODO: send packet to the opponent too
-        if (Player* opponent = ObjectAccessor::FindPlayer(_target))
+        if (Player* opponent = ObjectAccessor::FindPlayer(target))
         {
-            init.PlayerUpdate[1] = opponent->GetSession()->GetBattlePetMgr()->GetPlayerUpdateInfo();
-            opponent->GetSession()->GetBattlePetMgr()->InitializePetBattle(_invoker->GetGUID());
+            _participants[1].player = opponent;
+            _participants[1].playerUpdate = GetPlayerUpdateInfo(opponent, PBOID);
         }
-        init.IsPvp = true;
+
+        _isPvP = true;
+
+        // notify both players, I guess both of them should see himself as "invoker"
     }
-    else
+    /*else
     {
-        // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
-        // fake player - NYI
-        // generate pet teams (prepared or random) - next big sql awaits, yay!
-        // find out what to do with BattlePetNPCTeamMember.db2
-        init.IsPvp = false;
-        init.InitialWildPetGuid = _target;
-        init.ForfeitPenalty = 10;
-        if (Creature* wildPet = ObjectAccessor::GetCreature(*_invoker, _target))
-            init.PlayerUpdate[1] = _invoker->GetSession()->GetBattlePetMgr()->GetWildPetUpdateInfo(wildPet);
+        if (BattlePetSpeciesEntry const* species = sDB2Manager.GetBattlePetSpeciesByCreatureId(target.GetEntry()))
+        {
+            // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
+            // fake player - NYI
+            // generate pet teams (prepared or random) - next big sql awaits, yay!
+            // find out what to do with BattlePetNPCTeamMember.db2
+            WorldPackets::BattlePet::PlayerUpdate update;
+            init.InitialWildPetGuid = target;
+            init.ForfeitPenalty = 10;
+            if (Creature* wildPet = ObjectAccessor::GetCreature(*player, target))
+            {
+                // TODO: make teams
+                WorldPackets::BattlePet::PetBattlePetUpdateInfo pet;
+                pet.JournalInfo->Species = species->ID;
+                pet.JournalInfo->CreatureID = wildPet->GetDisplayId(); // creature id or display id? figure out this mess
+                pet.JournalInfo->CollarID = 0; // unknown
+                pet.JournalInfo->Level = wildPet->GetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL); // TODO: add this field to wild pets
+                update.Pets.push_back(pet);
+            }
+        }
+    }*/
+}
+
+WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
+{
+    BattlePetMgr* battlePetMgr = player->GetSession()->GetBattlePetMgr();
+    if (!battlePetMgr)
+        return;
+
+    WorldPackets::BattlePet::PlayerUpdate update;
+
+    update.Guid = player->GetGUID();
+    update.TrapAbilityID = TrapSpells[battlePetMgr->GetTrapLevel()];
+    update.TrapStatus = 4; // ?
+    update.InputFlags = 6; // ?
+
+    for (auto slot : battlePetMgr->GetSlots())
+    {
+        if (!slot.Locked && !slot.Pet.Guid.IsEmpty())
+        {
+            BattlePetMgr::BattlePet* pet = battlePetMgr->GetPet(slot.Pet.Guid);
+            if (!pet || pet->JournalInfo.Health == 0) // pet is dead
+            {
+                PBOID++; // should we skip pboid in this case or just continue and skip the last one in the row?
+                continue;
+            }
+
+            pet->UpdateInfo.Slot = slot.Index;
+            pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
+
+            // TODO: find better solution if possible and set proper PBOID (increment it to be unique for each pet in battle)
+            uint8 slot = 0;
+            for (auto abilityId : pet->GetActiveAbilities())
+            {
+                WorldPackets::BattlePet::BattlePetAbility ability;
+                ability.Id = abilityId;
+                ability.Slot = slot++;
+                ability.PBOID = PBOID;
+                pet->UpdateInfo.Abilities.push_back(ability);
+            }
+
+            pet->UpdateInfo.States[STATE_STAT_POWER] = pet->JournalInfo.Power;
+            pet->UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
+            pet->UpdateInfo.States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
+            pet->UpdateInfo.States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
+                                                                // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
+            pet->UpdateInfo.States[FamilyStates[pet->GetFamily()]] = 1; // STATE_PASSIVE_FAMILYTYPE
+                                                                        // other states (pve enemies)
+
+                                                                        // fill auras and other stuff
+            update.Pets.push_back(pet->UpdateInfo);
+            PBOID++;
+        }
     }
+}
+
+void PetBattle::Initialize()
+{
+    WorldPackets::BattlePet::PetBattleInitialUpdate init;
+
+    init.PlayerUpdate[0] = _participants[0].playerUpdate;
+    init.PlayerUpdate[1] = _participants[1].playerUpdate;
 
     // TODO: send enviros and set other fields properly
 
@@ -57,7 +134,7 @@ void PetBattle::Initialize()
     init.CurrentPetBattleState = 1; // ?
     init.CurrentRound = 0;
 
-    _invoker->GetSession()->SendPacket(init.Write());
+    _participants[0].player->GetSession()->SendPacket(init.Write());
 }
 
 void PetBattle::Update(uint8 frontPet)

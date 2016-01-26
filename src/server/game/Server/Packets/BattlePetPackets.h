@@ -285,8 +285,8 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PlayerUpdate PlayerUpdate[2] = { };
-            EnviromentUpdate EnviromentUpdate[3] = { };
+            PlayerUpdate PlayerUpdate[2];
+            EnviromentUpdate EnviromentUpdate[3];
             uint16 WaitingForFrontPetsMaxSecs = 0;
             uint16 PvpMaxRoundTime = 0;
             uint32 CurrentRound = 0;
@@ -399,9 +399,9 @@ namespace WorldPackets
             std::vector<PetBattleEffect> Effects;
             std::vector<int8> PetXDied;
             std::vector<PetBattleActiveAbility> Cooldowns;
-            uint8 NextInputFlags[2] = { };
-            int8 NextTrapStatus[2] = { };
-            uint16 RoundTimeSecs[2] = { };
+            uint8 NextInputFlags[2];
+            int8 NextTrapStatus[2];
+            uint16 RoundTimeSecs[2];
         };
 
         class PetBattleFirstRound final : public ServerPacket

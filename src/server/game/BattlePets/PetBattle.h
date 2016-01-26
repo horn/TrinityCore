@@ -18,15 +18,23 @@
 #ifndef PetBattle_h__
 #define PetBattle_h__
 
-#include "Player.h"
 #include "BattlePetPackets.h"
 
 class PetBattle
 {
 public:
-    PetBattle(Player* invoker, ObjectGuid target) : _invoker(invoker), _target(target) { }
+    struct Participant
+    {
+        union
+        {
+            Player* player;
+            Creature* creature;
+        };
 
-    Player* GetBattleInvoker() const { return _invoker; }
+        WorldPackets::BattlePet::PlayerUpdate playerUpdate;
+    };
+
+    PetBattle(Player* player, ObjectGuid target);
 
     void Initialize();
     void Update(uint8 frontPet);
@@ -35,13 +43,25 @@ public:
     void SendReplacementsMade();
 
 private:
-    Player* _invoker;
-    ObjectGuid _target;
+    Participant _participants[2];
+
+    WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
+
+    /* PBOID
+       1 - player1, pet1
+       2 - player1, pet2
+       3 - player1, pet3
+       4 - player2, pet1
+       5 - player2, pet2
+       6 - player2, pet3
+       7 - ? (some kind of opponent team object - for example aura 1377)
+       8 - weather
+       9 - ? (effects 13 and 14)
+       ... any others?
+    */
 
     bool _isPvP = false;
     uint8 _round = 0;
-
-    std::unordered_map<uint8, WorldPackets::BattlePet::PetBattlePetUpdateInfo> _pets;
 };
 
 #endif // PetBattle_h__

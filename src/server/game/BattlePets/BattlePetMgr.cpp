@@ -83,6 +83,34 @@ BattlePetFamily BattlePetMgr::BattlePet::GetFamily()
     return BATTLE_PET_FAMILY_MAX;
 }
 
+std::vector<uint32 /*abilityId*/> BattlePetMgr::BattlePet::GetActiveAbilities()
+{
+    std::vector<uint32> abilities;
+
+    if (JournalInfo.Level >= 10 && (JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_1_ROW_2))
+        abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][1][0]);
+    else
+        abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][0][0]);
+
+    if (JournalInfo.Level >= 2)
+    {
+        if (JournalInfo.Level >= 15 && (JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_2_ROW_2))
+            abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][1][1]);
+        else
+            abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][0][1]);
+
+        if (JournalInfo.Level >= 4)
+        {
+            if (JournalInfo.Level >= 25 && (JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_3_ROW_2)) // lvl 25 is max
+                abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][1][2]);
+            else
+                abilities.push_back(_abilitiesPerSpecies[JournalInfo.Species][0][2]);
+        }
+    }
+
+    return abilities+
+}
+
 std::unordered_map<uint16 /*BreedID*/, std::unordered_map<BattlePetState /*state*/, int32 /*value*/, std::hash<std::underlying_type<BattlePetState>::type> >> BattlePetMgr::_battlePetBreedStates;
 std::unordered_map<uint32 /*SpeciesID*/, std::unordered_map<BattlePetState /*state*/, int32 /*value*/, std::hash<std::underlying_type<BattlePetState>::type> >> BattlePetMgr::_battlePetSpeciesStates;
 std::unordered_map<uint32 /*SpeciesID*/, std::unordered_set<uint8 /*breed*/>> BattlePetMgr::_availableBreedsPerSpecies;
@@ -483,91 +511,6 @@ void BattlePetMgr::SendError(BattlePetError error, uint32 creatureId)
     battlePetError.Result = error;
     battlePetError.CreatureID = creatureId;
     _owner->SendPacket(battlePetError.Write());
-}
-
-WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetPlayerUpdateInfo()
-{
-    WorldPackets::BattlePet::PlayerUpdate player;
-    player.Guid = _owner->GetPlayer()->GetGUID();
-    player.TrapAbilityID = TrapSpells[_trapLevel];
-    player.TrapStatus = 4; // ?
-    player.InputFlags = 6; // ?
-
-    for (auto slot : _slots)
-    {
-        if (!slot.Locked && !slot.Pet.Guid.IsEmpty())
-        {
-            BattlePet* pet = GetPet(slot.Pet.Guid);
-            if (!pet || pet->JournalInfo.Health == 0) // pet is dead
-                continue;
-
-            pet->UpdateInfo.Slot = slot.Index;
-            pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
-
-            // TODO: find better solution if possible and set proper PBOID (increment it to be unique for each pet in battle)
-            WorldPackets::BattlePet::BattlePetAbility ability;
-            if (pet->JournalInfo.Level >= 10 && (pet->JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_1_ROW_2))
-                ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][1][0];
-            else
-                ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][0][0];
-
-            pet->UpdateInfo.Abilities.push_back(ability);
-
-            if (pet->JournalInfo.Level >= 2)
-            {
-                if (pet->JournalInfo.Level >= 15 && (pet->JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_2_ROW_2))
-                    ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][1][1];
-                else
-                    ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][0][1];
-
-                ability.Slot = 1;
-                pet->UpdateInfo.Abilities.push_back(ability);
-
-                if (pet->JournalInfo.Level >= 4)
-                {
-                    if (pet->JournalInfo.Level >= 25 && (pet->JournalInfo.Flags & BATTLE_PET_DB_FLAG_SPELL_3_ROW_2)) // lvl 25 is max
-                        ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][1][2];
-                    else
-                        ability.Id = _abilitiesPerSpecies[pet->JournalInfo.Species][0][2];
-
-                    ability.Slot = 2;
-                    pet->UpdateInfo.Abilities.push_back(ability);
-                }
-            }
-
-            pet->UpdateInfo.States[STATE_STAT_POWER] = pet->JournalInfo.Power;
-            pet->UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
-            pet->UpdateInfo.States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
-            pet->UpdateInfo.States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
-            // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
-            pet->UpdateInfo.States[FamilyStates[pet->GetFamily()]] = 1; // STATE_PASSIVE_FAMILYTYPE
-            // other states (pve enemies)
-
-            // fill auras and other stuff
-            player.Pets.push_back(pet->UpdateInfo);
-        }
-    }
-
-    return player;
-}
-
-WorldPackets::BattlePet::PlayerUpdate BattlePetMgr::GetWildPetUpdateInfo(Creature* creature) const
-{
-    WorldPackets::BattlePet::PlayerUpdate update;
-
-    if (BattlePetSpeciesEntry const* species = sDB2Manager.GetBattlePetSpeciesByCreatureId(creature->GetEntry()))
-    {
-        ///@todo: get info for all pets (usually not only one wild pet)
-        WorldPackets::BattlePet::PetBattlePetUpdateInfo pet;
-        pet.JournalInfo->Species = species->ID;
-        pet.JournalInfo->CreatureID = creature->GetDisplayId(); // really should be in JournalInfo CreatureID instead of DisplayID?
-        pet.JournalInfo->CollarID = 0; // unknown
-        pet.JournalInfo->Level = creature->GetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL); // TODO: add this field to wild pets
-
-        update.Pets.push_back(pet);
-    }
-
-    return update;
 }
 
 void BattlePetMgr::InitializePetBattle(ObjectGuid target)

@@ -139,6 +139,7 @@ public:
         void CalculateStats();
 
         BattlePetFamily GetFamily();
+        std::vector<uint32 /*abilityId*/> GetActiveAbilities();
 
         WorldPackets::BattlePet::BattlePetJournalInfo JournalInfo;
         WorldPackets::BattlePet::PetBattlePetUpdateInfo UpdateInfo; // contains JournalInfo too - maybe redunant
@@ -180,9 +181,6 @@ public:
 
     // Pet Battles
     void InitializePetBattle(ObjectGuid target);
-
-    WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo();
-    WorldPackets::BattlePet::PlayerUpdate GetWildPetUpdateInfo(Creature* creature) const;
 
     PetBattle* GetPetBattle() const { return _battle; }
 
