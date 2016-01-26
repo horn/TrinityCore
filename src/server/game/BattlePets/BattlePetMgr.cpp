@@ -108,7 +108,7 @@ std::vector<uint32 /*abilityId*/> BattlePetMgr::BattlePet::GetActiveAbilities()
         }
     }
 
-    return abilities+
+    return abilities;
 }
 
 std::unordered_map<uint16 /*BreedID*/, std::unordered_map<BattlePetState /*state*/, int32 /*value*/, std::hash<std::underlying_type<BattlePetState>::type> >> BattlePetMgr::_battlePetBreedStates;
