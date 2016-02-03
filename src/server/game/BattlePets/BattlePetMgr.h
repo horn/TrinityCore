@@ -20,6 +20,7 @@
 
 #include "BattlePetPackets.h"
 #include "PetBattle.h"
+#include "DatabaseEnv.h"
 
 enum BattlePetMisc
 {

@@ -70,8 +70,8 @@ PetBattle::PetBattle(Player* player, ObjectGuid target)
 WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
 {
     BattlePetMgr* battlePetMgr = player->GetSession()->GetBattlePetMgr();
-    if (!battlePetMgr)
-        return;
+    //if (!battlePetMgr) // this shouldn't happen
+    //    return;
 
     WorldPackets::BattlePet::PlayerUpdate update;
 
@@ -118,6 +118,8 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
             PBOID++;
         }
     }
+
+    return update;
 }
 
 void PetBattle::Initialize()
