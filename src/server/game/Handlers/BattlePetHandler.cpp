@@ -35,8 +35,19 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::Battle
 
 void WorldSession::HandleBattlePetSetBattleSlot(WorldPackets::BattlePet::BattlePetSetBattleSlot& battlePetSetBattleSlot)
 {
+    WorldPackets::BattlePet::BattlePetSlot* targetSlot = GetBattlePetMgr()->GetSlot(battlePetSetBattleSlot.Slot);
     if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetSetBattleSlot.PetGuid))
-        GetBattlePetMgr()->GetSlot(battlePetSetBattleSlot.Slot)->Pet = pet->JournalInfo;
+    {
+        if (!targetSlot->Pet.Guid.IsEmpty())
+            for (auto& slot : GetBattlePetMgr()->GetSlots())
+                if (slot.Pet.Guid == battlePetSetBattleSlot.PetGuid)
+                {
+                    GetBattlePetMgr()->GetSlot(slot.Index)->Pet = targetSlot->Pet;
+                    break;
+                }
+
+        targetSlot->Pet = pet->JournalInfo;
+    }
 }
 
 void WorldSession::HandleBattlePetModifyName(WorldPackets::BattlePet::BattlePetModifyName& battlePetModifyName)
