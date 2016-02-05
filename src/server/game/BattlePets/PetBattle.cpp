@@ -22,16 +22,19 @@
 #include "Player.h"
 
  // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
-PetBattle::PetBattle(Player* player, ObjectGuid target)
+PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo)
 {
     uint8 PBOID = 0;
+
+    _locationInfo = locationInfo; // TODO: verify location, cancel battle in case of invalid location etc.
     _participants[0].player = player;
-    _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID);
+    _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID); // TODO: each player must have at least one battle pet in slot
+
+    PBOID = 3;
 
     if (target.IsPlayer())
     {
         // CMSG_PET_BATTLE_REQUEST_PVP (battle pet duel) or Find Battle
-        // TODO: send packet to the opponent too
         if (Player* opponent = ObjectAccessor::FindPlayer(target))
         {
             _participants[1].player = opponent;
@@ -39,8 +42,6 @@ PetBattle::PetBattle(Player* player, ObjectGuid target)
         }
 
         _isPvP = true;
-
-        // notify both players, I guess both of them should see himself as "invoker"
     }
     /*else
     {
@@ -65,6 +66,8 @@ PetBattle::PetBattle(Player* player, ObjectGuid target)
             }
         }
     }*/
+
+    PBOID = 6;
 }
 
 WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
@@ -86,15 +89,11 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
         {
             BattlePetMgr::BattlePet* pet = battlePetMgr->GetPet(slot.Pet.Guid);
             if (!pet || pet->JournalInfo.Health == 0) // pet is dead
-            {
-                PBOID++; // should we skip pboid in this case or just continue and skip the last one in the row?
                 continue;
-            }
 
             pet->UpdateInfo.Slot = slot.Index;
             pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
 
-            // TODO: find better solution if possible and set proper PBOID (increment it to be unique for each pet in battle)
             uint8 slot = 0;
             for (auto abilityId : pet->GetActiveAbilities())
             {
@@ -122,8 +121,12 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
     return update;
 }
 
-void PetBattle::Initialize()
+void PetBattle::StartBattle()
 {
+    WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
+    finalLoc.LocationInfo = _locationInfo;
+    NotifyParticipants(finalLoc.Write());
+
     WorldPackets::BattlePet::PetBattleInitialUpdate init;
 
     init.PlayerUpdate[0] = _participants[0].playerUpdate;
@@ -136,7 +139,7 @@ void PetBattle::Initialize()
     init.CurrentPetBattleState = 1; // ?
     init.CurrentRound = 0;
 
-    _participants[0].player->GetSession()->SendPacket(init.Write());
+    NotifyParticipants(init.Write());
 }
 
 void PetBattle::Update(uint8 frontPet)
@@ -148,4 +151,13 @@ void PetBattle::Update(uint8 frontPet)
     }
     if (frontPet)
         SendReplacementsMade();*/
+}
+
+void PetBattle::NotifyParticipants(const WorldPacket* packet)
+{
+    // some checks needed?
+    _participants[0].player->GetSession()->SendPacket(packet);
+
+    if (_isPvP)
+        _participants[1].player->GetSession()->SendPacket(packet);
 }

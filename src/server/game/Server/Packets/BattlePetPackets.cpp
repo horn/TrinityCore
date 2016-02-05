@@ -284,6 +284,19 @@ void WorldPackets::BattlePet::PetBattleRequestPvp::Read()
     _worldPacket >> LocationInfo;
 }
 
+WorldPacket const* WorldPackets::BattlePet::PetBattlePvpChallenge::Write()
+{
+    _worldPacket << ChallengerGuid;
+    // TODO: LocationInfo operator<<
+    _worldPacket << uint32(LocationInfo.LocationResult);
+    _worldPacket << LocationInfo.BattleOrigin.PositionXYZOStream();
+
+    for (uint8 i = 0; i < 2; ++i)
+        _worldPacket << LocationInfo.PlayerPositions[i].PositionXYZStream();
+
+    return &_worldPacket;
+}
+
 void WorldPackets::BattlePet::PetBattleRequestWild::Read()
 {
     _worldPacket >> TargetGuid;

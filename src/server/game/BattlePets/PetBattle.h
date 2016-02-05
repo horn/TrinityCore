@@ -34,16 +34,18 @@ public:
         WorldPackets::BattlePet::PlayerUpdate playerUpdate;
     };
 
-    PetBattle(Player* player, ObjectGuid target);
+    PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
 
-    void Initialize();
+    void StartBattle();
     void Update(uint8 frontPet);
 
-    void SendFirstRound();
-    void SendReplacementsMade();
+    WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
+
+    void NotifyParticipants(const WorldPacket* packet);
 
 private:
     Participant _participants[2];
+    WorldPackets::BattlePet::LocationInfo _locationInfo;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
 

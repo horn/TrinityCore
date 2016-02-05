@@ -211,6 +211,17 @@ namespace WorldPackets
             LocationInfo LocationInfo;
         };
 
+        class PetBattlePvpChallenge final : public ServerPacket
+        {
+        public:
+            PetBattlePvpChallenge() : ServerPacket(SMSG_PET_BATTLE_PVP_CHALLENGE) { }
+
+            WorldPacket const* Write() override;
+
+            ObjectGuid ChallengerGuid;
+            LocationInfo LocationInfo;
+        };
+
         class PetBattleRequestWild final : public ClientPacket
         {
         public:

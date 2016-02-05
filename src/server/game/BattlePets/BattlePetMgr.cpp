@@ -512,12 +512,3 @@ void BattlePetMgr::SendError(BattlePetError error, uint32 creatureId)
     battlePetError.CreatureID = creatureId;
     _owner->SendPacket(battlePetError.Write());
 }
-
-void BattlePetMgr::InitializePetBattle(ObjectGuid target)
-{
-    if (!_battle)
-    {
-        _battle = new PetBattle(_owner->GetPlayer(), target);
-        _battle->Initialize();
-    }
-}

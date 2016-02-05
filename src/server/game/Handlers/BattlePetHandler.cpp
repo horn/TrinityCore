@@ -19,6 +19,7 @@
 #include "BattlePetMgr.h"
 #include "BattlePetPackets.h"
 #include "Player.h"
+#include "ObjectMgr.h"
 
 void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::BattlePetRequestJournal& /*battlePetRequestJournal*/)
 {
@@ -92,24 +93,52 @@ void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummo
 
 void WorldSession::HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleRequestPvp& petBattleRequestPvp)
 {
-    // TODO: handle locations properly
-    WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
-    finalLoc.LocationInfo = petBattleRequestPvp.LocationInfo;
+    if (GetBattlePetMgr()->GetPetBattle())
+        return;
 
-    SendPacket(finalLoc.Write());
+    Player* target = ObjectAccessor::FindPlayer(petBattleRequestPvp.TargetGuid);
+    if (!target || target->GetSession()->GetBattlePetMgr()->GetPetBattle()) // add "have battle pets unlocked" check
+        return;
 
-    GetBattlePetMgr()->InitializePetBattle(petBattleRequestPvp.TargetGuid);
+    PetBattle* battle = new PetBattle(_player, petBattleRequestPvp.TargetGuid, petBattleRequestPvp.LocationInfo);
+    GetBattlePetMgr()->SetPetBattle(battle);
+
+    WorldPackets::BattlePet::PetBattlePvpChallenge petBattlePvpChallenge;
+    petBattlePvpChallenge.ChallengerGuid = _player->GetGUID();
+    petBattlePvpChallenge.LocationInfo = petBattleRequestPvp.LocationInfo;
+
+    target->GetSession()->GetBattlePetMgr()->SetPetBattle(battle);
+    target->GetSession()->SendPacket(petBattlePvpChallenge.Write());
+}
+
+void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBattleRequestUpdate& petBattleRequestUpdate)
+{
+    if (petBattleRequestUpdate.Canceled)
+    {
+        delete GetBattlePetMgr()->GetPetBattle();
+        GetBattlePetMgr()->SetPetBattle(nullptr);
+
+        if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
+        {
+            challenger->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
+            //challenger->GetSession()->SendPacket(); // notify challenger
+        }
+    }
+    else
+    {
+        if (PetBattle* battle = GetBattlePetMgr()->GetPetBattle())
+            battle->StartBattle();
+    }
 }
 
 void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
 {
-    // TODO: handle locations properly
-    WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
-    finalLoc.LocationInfo = petBattleRequestWild.LocationInfo;
+    if (GetBattlePetMgr()->GetPetBattle())
+        return;
 
-    SendPacket(finalLoc.Write());
-
-    GetBattlePetMgr()->InitializePetBattle(petBattleRequestWild.TargetGuid);
+    PetBattle* battle = new PetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo);
+    GetBattlePetMgr()->SetPetBattle(battle);
+    battle->StartBattle();
 }
 
 void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& petBattleFinalNotify)
@@ -138,9 +167,4 @@ void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBa
 
     if (PetBattle* battle = GetBattlePetMgr()->GetPetBattle())
         battle->Update(petBattleReplaceFrontPet.FrontPet);
-}
-
-void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBattleRequestUpdate& petBattleRequestPvp)
-{
-    // not sure for what is it used
 }
