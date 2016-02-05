@@ -233,6 +233,27 @@ namespace WorldPackets
             LocationInfo LocationInfo;
         };
 
+        class PetBattleRequestUpdate final : public ClientPacket
+        {
+        public:
+            PetBattleRequestUpdate(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REQUEST_UPDATE, std::move(packet)) { }
+
+            void Read() override;
+
+            bool Canceled = false;
+            ObjectGuid TargetGUID;
+        };
+
+        class PetBattleRequestFailed final : public ServerPacket
+        {
+        public:
+            PetBattleRequestFailed() : ServerPacket(SMSG_PET_BATTLE_REQUEST_FAILED) { }
+
+            WorldPacket const* Write() override;
+
+            uint8 Reason;
+        };
+
         class PetBattleFinalizeLocation final : public ServerPacket
         {
         public:
@@ -350,17 +371,6 @@ namespace WorldPackets
             void Read() override;
 
             uint8 FrontPet = 0;
-        };
-
-        class PetBattleRequestUpdate final : public ClientPacket
-        {
-        public:
-            PetBattleRequestUpdate(WorldPacket&& packet) : ClientPacket(CMSG_PET_BATTLE_REQUEST_UPDATE, std::move(packet)) { }
-
-            void Read() override;
-
-            bool Canceled = false;
-            ObjectGuid TargetGUID;
         };
 
         struct PetBattleEffectTarget

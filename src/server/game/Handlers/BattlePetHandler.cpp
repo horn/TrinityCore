@@ -115,13 +115,19 @@ void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBatt
 {
     if (petBattleRequestUpdate.Canceled)
     {
+        if (!GetBattlePetMgr()->GetPetBattle())
+            return;
+
         delete GetBattlePetMgr()->GetPetBattle();
         GetBattlePetMgr()->SetPetBattle(nullptr);
 
         if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
         {
             challenger->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
-            //challenger->GetSession()->SendPacket(); // notify challenger
+
+            WorldPackets::BattlePet::PetBattleRequestFailed petBattleRequestFailed;
+            petBattleRequestFailed.Reason = 12; // TODO: enum
+            challenger->GetSession()->SendPacket(petBattleRequestFailed.Write());
         }
     }
     else

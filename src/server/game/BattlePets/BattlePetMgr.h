@@ -186,7 +186,7 @@ public:
 
 private:
     WorldSession* _owner;
-    PetBattle* _battle;
+    PetBattle* _battle = nullptr;
     uint16 _trapLevel = 0;
     std::unordered_map<uint64 /*battlePetGuid*/, BattlePet> _pets;
     std::vector<WorldPackets::BattlePet::BattlePetSlot> _slots;

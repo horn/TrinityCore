@@ -359,6 +359,13 @@ void WorldPackets::BattlePet::PetBattleRequestUpdate::Read()
     Canceled = _worldPacket.ReadBit();
 }
 
+WorldPacket const* WorldPackets::BattlePet::PetBattleRequestFailed::Write()
+{
+    _worldPacket << uint8(Reason);
+
+    return &_worldPacket;
+}
+
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleActiveAbility const& ability)
 {
     data << int32(ability.AbilityID);
