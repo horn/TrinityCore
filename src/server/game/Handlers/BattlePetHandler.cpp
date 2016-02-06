@@ -100,7 +100,7 @@ void WorldSession::HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleR
     if (!target || target->GetSession()->GetBattlePetMgr()->GetPetBattle()) // add "have battle pets unlocked" check
         return;
 
-    PetBattle* battle = new PetBattle(_player, petBattleRequestPvp.TargetGuid, petBattleRequestPvp.LocationInfo);
+    PetBattle* battle = new PetBattle(_player, petBattleRequestPvp.TargetGuid, petBattleRequestPvp.LocationInfo, 0);
     GetBattlePetMgr()->SetPetBattle(battle);
 
     WorldPackets::BattlePet::PetBattlePvpChallenge petBattlePvpChallenge;
@@ -142,7 +142,7 @@ void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattle
     if (GetBattlePetMgr()->GetPetBattle())
         return;
 
-    PetBattle* battle = new PetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo);
+    PetBattle* battle = new PetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo, 10);
     GetBattlePetMgr()->SetPetBattle(battle);
     battle->StartBattle();
 }
@@ -160,9 +160,16 @@ void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput&
     // SMSG_PET_BATTLE_FINAL_ROUND when MoveType = 4, maybe
 }
 
-void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& petBattleQuitNotify)
+void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& /*petBattleQuitNotify*/)
 {
+    PetBattle* battle = GetBattlePetMgr()->GetPetBattle();
+    if (!battle)
+        return;
 
+    WorldPackets::BattlePet::PetBattleFinished finished;
+    battle->NotifyParticipants(finished.Write());
+    // pet should lost 10% hp
+    battle->DestroyBattle();
 }
 
 void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet)

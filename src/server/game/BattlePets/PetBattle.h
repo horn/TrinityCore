@@ -34,7 +34,7 @@ public:
         WorldPackets::BattlePet::PlayerUpdate playerUpdate;
     };
 
-    PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
+    PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo, uint8 forfeitPentalty);
 
     void StartBattle();
     void Update(uint8 frontPet);
@@ -42,10 +42,12 @@ public:
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
 
     void NotifyParticipants(const WorldPacket* packet);
+    void DestroyBattle();
 
 private:
     Participant _participants[2];
     WorldPackets::BattlePet::LocationInfo _locationInfo;
+    uint8 _forfeitPenalty;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
 

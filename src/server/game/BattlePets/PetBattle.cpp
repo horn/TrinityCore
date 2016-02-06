@@ -22,11 +22,13 @@
 #include "Player.h"
 
  // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
-PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo)
+PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo, uint8 forfeitPenalty)
 {
     uint8 PBOID = 0;
 
     _locationInfo = locationInfo; // TODO: verify location, cancel battle in case of invalid location etc.
+    _forfeitPenalty = forfeitPenalty;
+
     _participants[0].player = player;
     _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID); // TODO: each player must have at least one battle pet in slot
 
@@ -73,8 +75,6 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
 WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
 {
     BattlePetMgr* battlePetMgr = player->GetSession()->GetBattlePetMgr();
-    //if (!battlePetMgr) // this shouldn't happen
-    //    return;
 
     WorldPackets::BattlePet::PlayerUpdate update;
 
@@ -83,6 +83,7 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
     update.TrapStatus = 4; // ?
     update.InputFlags = 6; // ?
 
+    uint8 slotId = 0;
     for (auto slot : battlePetMgr->GetSlots())
     {
         if (!slot.Locked && !slot.Pet.Guid.IsEmpty())
@@ -91,15 +92,16 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
             if (!pet || pet->JournalInfo.Health == 0) // pet is dead
                 continue;
 
-            pet->UpdateInfo.Slot = slot.Index;
+            pet->UpdateInfo.Slot = slotId++;
             pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
 
-            uint8 slot = 0;
+            uint8 abilitySlotId = 0;
+            pet->UpdateInfo.Abilities.clear();
             for (auto abilityId : pet->GetActiveAbilities())
             {
                 WorldPackets::BattlePet::BattlePetAbility ability;
                 ability.Id = abilityId;
-                ability.Slot = slot++;
+                ability.Slot = abilitySlotId++;
                 ability.PBOID = PBOID;
                 pet->UpdateInfo.Abilities.push_back(ability);
             }
@@ -138,6 +140,7 @@ void PetBattle::StartBattle()
     init.PvpMaxRoundTime = 30;
     init.CurrentPetBattleState = 1; // ?
     init.CurrentRound = 0;
+    init.ForfeitPenalty = _forfeitPenalty;
 
     NotifyParticipants(init.Write());
 }
@@ -160,4 +163,14 @@ void PetBattle::NotifyParticipants(const WorldPacket* packet)
 
     if (_isPvP)
         _participants[1].player->GetSession()->SendPacket(packet);
+}
+
+void PetBattle::DestroyBattle()
+{
+    _participants[0].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
+
+    if (_isPvP)
+        _participants[1].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
+
+    delete this;
 }
