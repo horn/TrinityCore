@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -32,40 +32,46 @@ public:
         };
 
         WorldPackets::BattlePet::PlayerUpdate playerUpdate;
+
+        bool roundCompleted = false;
     };
 
-    PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo, uint8 forfeitPentalty);
+    PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
+    ~PetBattle();
 
     void StartBattle();
-    void Update(uint8 frontPet);
+    void Update(Player* player, uint8 frontPet);
 
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
+    uint8 GetForfeitPenalty() const { return _forfeitPenalty; }
 
     void NotifyParticipants(const WorldPacket* packet);
-    void DestroyBattle();
 
 private:
     Participant _participants[2];
+
     WorldPackets::BattlePet::LocationInfo _locationInfo;
-    uint8 _forfeitPenalty;
+    bool _isPvP = false;
+    uint8 _forfeitPenalty = 0;
+
+    WorldPackets::BattlePet::PetBattleRoundResult _roundResult;
+    uint8 _round = 0;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
 
     /* PBOID
-       1 - player1, pet1
-       2 - player1, pet2
-       3 - player1, pet3
-       4 - player2, pet1
-       5 - player2, pet2
-       6 - player2, pet3
+       0 - player1, pet1
+       1 - player1, pet2
+       2 - player1, pet3
+       3 - player2, pet1
+       4 - player2, pet2
+       5 - player2, pet3
+       6 - ?
        7 - ? (some kind of opponent team object - for example aura 1377)
        8 - weather
        9 - ? (effects 13 and 14)
        ... any others?
     */
-
-    bool _isPvP = false;
-    uint8 _round = 0;
 };
 
 #endif // PetBattle_h__

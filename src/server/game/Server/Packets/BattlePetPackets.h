@@ -251,7 +251,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            uint8 Reason;
+            uint8 Reason = 0;
         };
 
         class PetBattleFinalizeLocation final : public ServerPacket
@@ -325,7 +325,7 @@ namespace WorldPackets
             uint32 NpcCreatureId = 0;
             uint32 NpcDisplayId = 0;
             uint8 CurrentPetBattleState = 0;
-            uint8 ForfeitPenalty = 10;
+            uint8 ForfeitPenalty = 0;
             ObjectGuid InitialWildPetGuid;
             bool IsPvp = false;
             bool CanAwardXP = false;
@@ -420,9 +420,9 @@ namespace WorldPackets
             std::vector<PetBattleEffect> Effects;
             std::vector<int8> PetXDied;
             std::vector<PetBattleActiveAbility> Cooldowns;
-            uint8 NextInputFlags[2];
-            int8 NextTrapStatus[2];
-            uint16 RoundTimeSecs[2];
+            uint8 NextInputFlags[2] = { };
+            int8 NextTrapStatus[2] = { };
+            uint16 RoundTimeSecs[2] = { };
         };
 
         class PetBattleFirstRound final : public ServerPacket
@@ -432,7 +432,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PetBattleRoundResult MsgData;
+            PetBattleRoundResult RoundResult;
         };
 
         class PetBattleReplacementsMade final : public ServerPacket
@@ -442,7 +442,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PetBattleRoundResult MsgData;
+            PetBattleRoundResult RoundResult;
         };
 
         //SMSG_PET_BATTLE_FINISHED

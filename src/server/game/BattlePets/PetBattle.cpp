@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2008-2015 TrinityCore <http://www.trinitycore.org/>
+ * Copyright (C) 2008-2016 TrinityCore <http://www.trinitycore.org/>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -22,15 +22,15 @@
 #include "Player.h"
 
  // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
-PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo, uint8 forfeitPenalty)
+PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo)
 {
     uint8 PBOID = 0;
 
     _locationInfo = locationInfo; // TODO: verify location, cancel battle in case of invalid location etc.
-    _forfeitPenalty = forfeitPenalty;
 
     _participants[0].player = player;
     _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID); // TODO: each player must have at least one battle pet in slot
+    player->GetSession()->GetBattlePetMgr()->SetPetBattle(this);
 
     PBOID = 3;
 
@@ -41,9 +41,11 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
         {
             _participants[1].player = opponent;
             _participants[1].playerUpdate = GetPlayerUpdateInfo(opponent, PBOID);
+            opponent->GetSession()->GetBattlePetMgr()->SetPetBattle(this);
         }
 
         _isPvP = true;
+        _forfeitPenalty = 0; // TODO: make this configurable
     }
     /*else
     {
@@ -55,7 +57,7 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
             // find out what to do with BattlePetNPCTeamMember.db2
             WorldPackets::BattlePet::PlayerUpdate update;
             init.InitialWildPetGuid = target;
-            init.ForfeitPenalty = 10;
+            init.ForfeitPenalty = 10; // TODO: make this configurable
             if (Creature* wildPet = ObjectAccessor::GetCreature(*player, target))
             {
                 // TODO: make teams
@@ -72,6 +74,14 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
     PBOID = 6;
 }
 
+PetBattle::~PetBattle()
+{
+    _participants[0].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
+
+    if (_isPvP)
+        _participants[1].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
+}
+
 WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
 {
     BattlePetMgr* battlePetMgr = player->GetSession()->GetBattlePetMgr();
@@ -80,8 +90,9 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
 
     update.Guid = player->GetGUID();
     update.TrapAbilityID = TrapSpells[battlePetMgr->GetTrapLevel()];
-    update.TrapStatus = 4; // ?
-    update.InputFlags = 6; // ?
+    update.TrapStatus = 6; // ?
+    update.RoundTimeSecs = 30;
+    update.InputFlags = 8; // ?
 
     uint8 slotId = 0;
     for (auto slot : battlePetMgr->GetSlots())
@@ -92,11 +103,11 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
             if (!pet || pet->JournalInfo.Health == 0) // pet is dead
                 continue;
 
+            pet->UpdateInfo = WorldPackets::BattlePet::PetBattlePetUpdateInfo(); // re-initialize update info to remove old values (TODO: consider other ways)
             pet->UpdateInfo.Slot = slotId++;
             pet->UpdateInfo.JournalInfo = &pet->JournalInfo;
 
             uint8 abilitySlotId = 0;
-            pet->UpdateInfo.Abilities.clear();
             for (auto abilityId : pet->GetActiveAbilities())
             {
                 WorldPackets::BattlePet::BattlePetAbility ability;
@@ -110,11 +121,10 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
             pet->UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
             pet->UpdateInfo.States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
             pet->UpdateInfo.States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
-                                                                // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
+            // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
             pet->UpdateInfo.States[FamilyStates[pet->GetFamily()]] = 1; // STATE_PASSIVE_FAMILYTYPE
-                                                                        // other states (pve enemies)
-
-                                                                        // fill auras and other stuff
+            // add other states (pve enemies)
+            // fill auras and other stuff
             update.Pets.push_back(pet->UpdateInfo);
             PBOID++;
         }
@@ -145,15 +155,44 @@ void PetBattle::StartBattle()
     NotifyParticipants(init.Write());
 }
 
-void PetBattle::Update(uint8 frontPet)
+void PetBattle::Update(Player* player, uint8 frontPet)
 {
-    /*if (!_round)
-    {
-        SendFirstRound();
+    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
+
+    if (_participants[playerId].roundCompleted)
         return;
+
+    _roundResult.NextPetBattleState = 2;
+
+    WorldPackets::BattlePet::PetBattleEffect eff;
+    eff.PetBattleEffectType = 4;
+    eff.CasterPBOID = frontPet + (playerId ? 3 : 0); // "second" player's pboid starts at 3
+    WorldPackets::BattlePet::PetBattleEffectTarget tar;
+    tar.Petx = eff.CasterPBOID;
+    eff.Targets.push_back(tar);
+    _roundResult.Effects.push_back(eff);
+
+    _participants[playerId].roundCompleted = true;
+
+    if (!_participants[0].roundCompleted || !_participants[1].roundCompleted)
+        return;
+
+    if (!_round)
+    {
+        _roundResult.RoundTimeSecs[0] = 30;
+        _roundResult.RoundTimeSecs[1] = 30;
+
+        WorldPackets::BattlePet::PetBattleFirstRound petBattleFirstRound;
+        petBattleFirstRound.RoundResult = _roundResult;
+        NotifyParticipants(petBattleFirstRound.Write());
+        //return;
     }
-    if (frontPet)
-        SendReplacementsMade();*/
+    else
+        return;
+
+    _participants[0].roundCompleted = false;
+    _participants[1].roundCompleted = false;
+    _round++;
 }
 
 void PetBattle::NotifyParticipants(const WorldPacket* packet)
@@ -163,14 +202,4 @@ void PetBattle::NotifyParticipants(const WorldPacket* packet)
 
     if (_isPvP)
         _participants[1].player->GetSession()->SendPacket(packet);
-}
-
-void PetBattle::DestroyBattle()
-{
-    _participants[0].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
-
-    if (_isPvP)
-        _participants[1].player->GetSession()->GetBattlePetMgr()->SetPetBattle(nullptr);
-
-    delete this;
 }

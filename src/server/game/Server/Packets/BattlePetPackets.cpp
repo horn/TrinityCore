@@ -407,6 +407,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRound
         for (auto const& target : effect.Targets)
         {
             data.WriteBits(target.Type, 3);
+            data.FlushBits();
             data << uint8(target.Petx);
 
             switch (target.Type)
@@ -446,6 +447,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRound
         data << ability;
 
     data.WriteBits(round.PetXDied.size(), 3);
+    data.FlushBits();
     for (int8 pet : round.PetXDied)
         data << int8(pet);
 
@@ -454,14 +456,14 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRound
 
 WorldPacket const* WorldPackets::BattlePet::PetBattleFirstRound::Write()
 {
-    _worldPacket << MsgData;
+    _worldPacket << RoundResult;
     
     return &_worldPacket;
 }
 
 WorldPacket const* WorldPackets::BattlePet::PetBattleReplacementsMade::Write()
 {
-    _worldPacket << MsgData;
+    _worldPacket << RoundResult;
 
     return &_worldPacket;
 }
