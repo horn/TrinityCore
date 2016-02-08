@@ -413,31 +413,31 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRound
             switch (target.Type)
             {
                 case 1:
-                    data << int32(target.StateID);
-                    data << int32(target.StateValue);
-                    break;
-                case 2:
                     data << int32(target.BroadcastTextID);
-                    break;
-                case 3:
-                    data << int32(target.ChangedAbilityID);
-                    data << int32(target.CooldownRemaining);
-                    data << int32(target.LockdownRemaining);
-                    break;
-                case 4:
-                    data << int32(target.NewStatValue);
-                    break;
-                case 5:
+                    break;                
+                case 2:
                     data << int32(target.AuraInstanceID);
                     data << int32(target.AuraAbilityID);
                     data << int32(target.RoundsRemaining);
                     data << int32(target.CurrentRound);
                     break;
-                case 6:
+                case 3:
+                    data << int32(target.NewStatValue);
+                    break;
+                case 4:
                     data << int32(target.Health);
                     break;
-                case 7:
+                case 5:
+                    data << int32(target.ChangedAbilityID);
+                    data << int32(target.CooldownRemaining);
+                    data << int32(target.LockdownRemaining);
+                    break;
+                case 6:
                     data << int32(target.TriggerAbilityID);
+                    break;
+                case 7:
+                    data << int32(target.StateID);
+                    data << int32(target.StateValue);
                     break;
             }
         }

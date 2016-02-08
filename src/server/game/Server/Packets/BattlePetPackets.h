@@ -247,7 +247,7 @@ namespace WorldPackets
         class PetBattleRequestFailed final : public ServerPacket
         {
         public:
-            PetBattleRequestFailed() : ServerPacket(SMSG_PET_BATTLE_REQUEST_FAILED) { }
+            PetBattleRequestFailed() : ServerPacket(SMSG_PET_BATTLE_REQUEST_FAILED, 1) { }
 
             WorldPacket const* Write() override;
 
@@ -445,7 +445,6 @@ namespace WorldPackets
             PetBattleRoundResult RoundResult;
         };
 
-        //SMSG_PET_BATTLE_FINISHED
         class PetBattleFinished final : public ServerPacket
         {
         public:
