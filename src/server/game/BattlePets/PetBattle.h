@@ -20,6 +20,56 @@
 
 #include "BattlePetPackets.h"
 
+enum PBOIDNames
+{
+    PBOID_P0_PET_0  = 0,
+    PBOID_P0_PET_1  = 1,
+    PBOID_P0_PET_2  = 2,
+    PBOID_P1_PET_0  = 3,
+    PBOID_P1_PET_1  = 4,
+    PBOID_P1_PET_2  = 5,
+    PBOID_PAD_0     = 6,
+    PBOID_PAD_1     = 7,
+    PBOID_WEATHER   = 8,
+    PBOID_INVALID   = 9
+};
+
+// custom names, can't find them in client
+enum PetBattleMoveType
+{
+    PETBATTLE_MOVE_TYPE_UNK1    = 0, // connected to quit battle?
+    PETBATTLE_USE_ABILITY       = 1,
+    PETBATTLE_CHANGE_PET        = 2, // swap pet and pass round
+    PETBATTLE_MOVE_TYPE_UNK2    = 3, // i guess this will be used for cage ability
+    PETBATTLE_MOVE_TYPE_UNK3    = 4  // connected to quit battle?
+
+    // ChangePet
+    // UseAbility
+    // UseTrap
+    // SkipTurn
+    // ForfeitGame
+};
+
+enum PetBattleEffectType
+{
+    PETBATTLE_EFFECT_TYPE_SET_HEALTH            = 0,
+    PETBATTLE_EFFECT_TYPE_AURA_APPLY            = 1,
+    PETBATTLE_EFFECT_TYPE_AURA_CANCEL           = 2,
+    PETBATTLE_EFFECT_TYPE_AURA_CHANGE           = 3,
+    PETBATTLE_EFFECT_TYPE_PET_SWAP              = 4,
+    PETBATTLE_EFFECT_TYPE_STATUS_CHANGE         = 5,
+    PETBATTLE_EFFECT_TYPE_SET_STATE             = 6,
+    PETBATTLE_EFFECT_TYPE_SET_MAX_HEALTH        = 7,
+    PETBATTLE_EFFECT_TYPE_SET_SPEED             = 8,
+    PETBATTLE_EFFECT_TYPE_SET_POWER             = 9,
+    PETBATTLE_EFFECT_TYPE_TRIGGER_ABILITY       = 10,
+    PETBATTLE_EFFECT_TYPE_ABILITY_CHANGE        = 11,
+    PETBATTLE_EFFECT_TYPE_NPC_EMOTE             = 12,
+    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN = 13, // or AURAS_BEGIN
+    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END   = 14, // or AURAS_END
+    PETBATTLE_EFFECT_TYPE_INVALID               = 15  // not sure about the value
+};
+
 class PetBattle
 {
 public:
@@ -40,7 +90,8 @@ public:
     ~PetBattle();
 
     void StartBattle();
-    void Update(Player* player, uint8 frontPet);
+    void RegisterMove(uint8 playerId);
+    void SwapPet(Player* player, uint8 frontPet);
 
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
     uint8 GetForfeitPenalty() const { return _forfeitPenalty; }
@@ -54,24 +105,10 @@ private:
     bool _isPvP = false;
     uint8 _forfeitPenalty = 0;
 
-    WorldPackets::BattlePet::PetBattleRoundResult _roundResult;
+    WorldPackets::BattlePet::RoundResult _roundResult;
     uint8 _round = 0;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
-
-    /* PBOID
-       0 - player1, pet1
-       1 - player1, pet2
-       2 - player1, pet3
-       3 - player2, pet1
-       4 - player2, pet2
-       5 - player2, pet3
-       6 - ?
-       7 - ? (some kind of opponent team object - for example aura 1377)
-       8 - weather
-       9 - ? (effects 13 and 14)
-       ... any others?
-    */
 };
 
 #endif // PetBattle_h__

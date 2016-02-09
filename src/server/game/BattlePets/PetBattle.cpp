@@ -92,7 +92,7 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
     update.TrapAbilityID = TrapSpells[battlePetMgr->GetTrapLevel()];
     update.TrapStatus = 6; // ?
     update.RoundTimeSecs = 30;
-    update.InputFlags = 8; // ?
+    update.InputFlags = 8; // ? 8 allows you to choose which battle pet goes first
 
     uint8 slotId = 0;
     for (auto slot : battlePetMgr->GetSlots())
@@ -155,7 +155,37 @@ void PetBattle::StartBattle()
     NotifyParticipants(init.Write());
 }
 
-void PetBattle::Update(Player* player, uint8 frontPet)
+void PetBattle::RegisterMove(uint8 playerId)
+{
+    _participants[playerId].roundCompleted = true;
+
+    if (!_participants[0].roundCompleted || !_participants[1].roundCompleted)
+        return;
+
+    _roundResult.RoundTimeSecs[0] = 30;
+    _roundResult.RoundTimeSecs[1] = 30;
+    _roundResult.CurRound = _round;
+
+    if (!_round)
+    {
+        WorldPackets::BattlePet::PetBattleFirstRound petBattleFirstRound;
+        petBattleFirstRound.RoundResult = _roundResult;
+        NotifyParticipants(petBattleFirstRound.Write());
+    }
+    else // TODO: handle last round
+    {
+        WorldPackets::BattlePet::PetBattleRoundResult petBattleRoundResult;
+        petBattleRoundResult.RoundResult = _roundResult;
+        NotifyParticipants(petBattleRoundResult.Write());
+    }
+
+    _roundResult = WorldPackets::BattlePet::RoundResult(); // reset round result
+    _participants[0].roundCompleted = false;
+    _participants[1].roundCompleted = false;
+    _round++;
+}
+
+void PetBattle::SwapPet(Player* player, uint8 frontPet)
 {
     uint8 playerId = (player == _participants[0].player) ? 0 : 1;
 
@@ -165,34 +195,16 @@ void PetBattle::Update(Player* player, uint8 frontPet)
     _roundResult.NextPetBattleState = 2;
 
     WorldPackets::BattlePet::PetBattleEffect eff;
-    eff.PetBattleEffectType = 4;
-    eff.CasterPBOID = frontPet + (playerId ? 3 : 0); // "second" player's pboid starts at 3
+    eff.PetBattleEffectType = PETBATTLE_EFFECT_TYPE_PET_SWAP;
     WorldPackets::BattlePet::PetBattleEffectTarget tar;
-    tar.Petx = eff.CasterPBOID;
+    tar.Type = 0; // TODO: enum
+    tar.Petx = (playerId ? PBOID_P1_PET_0 : PBOID_P0_PET_0) + frontPet; // "second" player's pboid starts at 3
     eff.Targets.push_back(tar);
+    eff.CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar.Petx; // on first round, caster is the same as target
+    _participants[playerId].playerUpdate.FrontPet = tar.Petx; // not sure if we can store it here
     _roundResult.Effects.push_back(eff);
 
-    _participants[playerId].roundCompleted = true;
-
-    if (!_participants[0].roundCompleted || !_participants[1].roundCompleted)
-        return;
-
-    if (!_round)
-    {
-        _roundResult.RoundTimeSecs[0] = 30;
-        _roundResult.RoundTimeSecs[1] = 30;
-
-        WorldPackets::BattlePet::PetBattleFirstRound petBattleFirstRound;
-        petBattleFirstRound.RoundResult = _roundResult;
-        NotifyParticipants(petBattleFirstRound.Write());
-        //return;
-    }
-    else
-        return;
-
-    _participants[0].roundCompleted = false;
-    _participants[1].roundCompleted = false;
-    _round++;
+    RegisterMove(playerId);
 }
 
 void PetBattle::NotifyParticipants(const WorldPacket* packet)

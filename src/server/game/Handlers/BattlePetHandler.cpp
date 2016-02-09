@@ -148,8 +148,18 @@ void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattle
 
 void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput)
 {
-    // SMSG_PET_BATTLE_ROUND_RESULT when MoveType = 1
-    // SMSG_PET_BATTLE_FINAL_ROUND when MoveType = 4, maybe
+    PetBattle* battle = GetBattlePetMgr()->GetPetBattle();
+    if (!battle)
+        return;
+
+    switch (PetBattleMoveType(petBattleInput.MoveType))
+    {
+        case PETBATTLE_CHANGE_PET:
+            battle->SwapPet(_player, uint8(petBattleInput.NewFrontPet));
+            break;
+        default:
+            return;
+    }
 }
 
 void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& /*petBattleQuitNotify*/)
@@ -171,10 +181,6 @@ void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQ
 
 void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet)
 {
-    // SMSG_PET_BATTLE_FIRST_ROUND or SMSG_PET_BATTLE_REPLACEMENTS_MADE
-    // PetBattleEffectType: 4
-    // Effect.Petx = petBattleReplaceFrontPet.FrontPet
-
     if (PetBattle* battle = GetBattlePetMgr()->GetPetBattle())
-        battle->Update(_player, petBattleReplaceFrontPet.FrontPet);
+        battle->SwapPet(_player, petBattleReplaceFrontPet.FrontPet);
 }

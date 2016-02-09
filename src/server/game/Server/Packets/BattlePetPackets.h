@@ -413,7 +413,7 @@ namespace WorldPackets
             uint8 Pboid = 0;
         };
 
-        struct PetBattleRoundResult
+        struct RoundResult
         {
             int32 CurRound = 0;
             int8 NextPetBattleState = 0;
@@ -432,7 +432,17 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PetBattleRoundResult RoundResult;
+            RoundResult RoundResult;
+        };
+
+        class PetBattleRoundResult final : public ServerPacket
+        {
+        public:
+            PetBattleRoundResult() : ServerPacket(SMSG_PET_BATTLE_ROUND_RESULT) { }
+
+            WorldPacket const* Write() override;
+
+            RoundResult RoundResult;
         };
 
         class PetBattleReplacementsMade final : public ServerPacket
@@ -442,7 +452,7 @@ namespace WorldPackets
 
             WorldPacket const* Write() override;
 
-            PetBattleRoundResult RoundResult;
+            RoundResult RoundResult;
         };
 
         class PetBattleFinished final : public ServerPacket

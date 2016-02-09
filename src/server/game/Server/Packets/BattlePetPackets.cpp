@@ -377,7 +377,7 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleActiv
     return data;
 }
 
-ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::PetBattleRoundResult const& round)
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::RoundResult const& round)
 {
     data << int32(round.CurRound);
     data << int8(round.NextPetBattleState);
@@ -458,6 +458,13 @@ WorldPacket const* WorldPackets::BattlePet::PetBattleFirstRound::Write()
 {
     _worldPacket << RoundResult;
     
+    return &_worldPacket;
+}
+
+WorldPacket const* WorldPackets::BattlePet::PetBattleRoundResult::Write()
+{
+    _worldPacket << RoundResult;
+
     return &_worldPacket;
 }
 
