@@ -141,8 +141,16 @@ void PetBattle::StartBattle()
 
     WorldPackets::BattlePet::PetBattleInitialUpdate init;
 
-    init.PlayerUpdate[0] = _participants[0].playerUpdate;
-    init.PlayerUpdate[1] = _participants[1].playerUpdate;
+    for (uint8 i = 0; i < (_isPvP ? 2 : 1); ++i)
+    {
+        _participants[i].player->Dismount();
+        // set pacified and disable move flags
+        _participants[i].player->MonsterMoveWithSpeed(_locationInfo.PlayerPositions[i].GetPositionX(), _locationInfo.PlayerPositions[i].GetPositionY(),
+                                                      _locationInfo.PlayerPositions[i].GetPositionZ(), _participants[i].player->GetSpeed(MOVE_RUN));
+        // need to be set AFTER the movement is done.. or make 2 points to run behind the battle position and return here
+        _participants[i].player->SetOrientation(_locationInfo.PlayerPositions[i].GetOrientation());
+        init.PlayerUpdate[i] = _participants[i].playerUpdate;
+    }
 
     // TODO: send enviros and set other fields properly
 
@@ -153,6 +161,50 @@ void PetBattle::StartBattle()
     init.ForfeitPenalty = _forfeitPenalty;
 
     NotifyParticipants(init.Write());
+
+    /*_participants[0].player->SetRooted(true); // inaccessible, must be called from WorldSession
+    if (_isPvP)
+        _participants[1].player->SetRooted(true);*/
+}
+
+// don't call this on battle interrupt (we should only unroot players, send SMSG_PET_BATTLE_FINISHED and delete battle in this case)
+void PetBattle::EndBattle(uint8 winner, bool forfeit)
+{
+    WorldPackets::BattlePet::PetBattleFinalRound finalRound;
+    finalRound.Abandoned = forfeit;
+    finalRound.PvpBattle = _isPvP;
+    finalRound.Winners[winner] = true;
+
+    if (!_isPvP)
+        finalRound.NpcCreatureID[1] = _participants[1].creature->GetEntry(); // really? why NpcCreatureID[0] would be here?
+
+    for (uint8 i = 0; i < 2; ++i)
+    {
+        uint8 PBOID = 0;
+
+        for (auto pet : _participants[i].playerUpdate.Pets)
+        {
+            WorldPackets::BattlePet::FinalRoundPetInfo petInfo;
+            petInfo.Guid = pet.JournalInfo->Guid;
+            petInfo.Level = pet.JournalInfo->Level; // this should probably change with xp gain
+            petInfo.Xp = pet.JournalInfo->Exp; // awarded, initial or new value (intial + awarded)?
+            petInfo.Health = pet.JournalInfo->Health; // in case of pvp no health is lost (even if the pet dies during the battle)
+            petInfo.MaxHealth = pet.JournalInfo->MaxHealth; // max or initial?
+            petInfo.InitialLevel = pet.JournalInfo->Level;
+            petInfo.PBOID = PBOID + (i ? PBOID_P1_PET_0 : PBOID_P0_PET_0);
+            petInfo.Caged = false; // TODO
+            petInfo.Captured = false; // TODO
+            petInfo.SeenAction = false; // TODO
+            petInfo.AwardedXP = false; // in case of find battle or pve battle, only if pet did something during the battle
+            finalRound.Pets.push_back(petInfo);
+        }
+    }
+
+    NotifyParticipants(finalRound.Write());
+
+    /*_participants[0].player->SetRooted(false);
+    if (_isPvP)
+        _participants[1].player->SetRooted(false);*/
 }
 
 void PetBattle::RegisterMove(uint8 playerId)
@@ -203,6 +255,16 @@ void PetBattle::SwapPet(Player* player, uint8 frontPet)
     eff.CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar.Petx; // on first round, caster is the same as target
     _participants[playerId].playerUpdate.FrontPet = tar.Petx; // not sure if we can store it here
     _roundResult.Effects.push_back(eff);
+
+    RegisterMove(playerId);
+}
+
+void PetBattle::ForfeitBattle(Player* player)
+{
+    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
+
+    if (_participants[playerId].roundCompleted)
+        return; // TODO: in this case we should probably remember that player wants to forfeit battle and do it in next round instead of ignoring it
 
     RegisterMove(playerId);
 }

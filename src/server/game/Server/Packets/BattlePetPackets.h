@@ -445,6 +445,35 @@ namespace WorldPackets
             RoundResult RoundResult;
         };
 
+        struct FinalRoundPetInfo
+        {
+            ObjectGuid Guid;
+            uint16 Level = 0;
+            uint16 Xp = 0;
+            int32 Health = 0;
+            uint32 MaxHealth = 0;
+            uint16 InitialLevel = 0;
+            uint8 PBOID = 0;
+            bool Captured = false;
+            bool Caged = false;
+            bool SeenAction = false;
+            bool AwardedXP = false;
+        };
+
+        class PetBattleFinalRound final : public ServerPacket
+        {
+        public:
+            PetBattleFinalRound() : ServerPacket(SMSG_PET_BATTLE_FINAL_ROUND) { }
+
+            WorldPacket const* Write() override;
+
+            bool Abandoned = false;
+            bool PvpBattle = false;
+            bool Winners[2] = { };
+            uint32 NpcCreatureID[2] = { };
+            std::vector<FinalRoundPetInfo> Pets;
+        };
+
         class PetBattleReplacementsMade final : public ServerPacket
         {
         public:

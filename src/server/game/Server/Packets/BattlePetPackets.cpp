@@ -468,6 +468,47 @@ WorldPacket const* WorldPackets::BattlePet::PetBattleRoundResult::Write()
     return &_worldPacket;
 }
 
+ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::FinalRoundPetInfo const& info)
+{
+    data << info.Guid;
+    data << uint16(info.Level);
+    data << uint16(info.Xp);
+    data << int32(info.Health);
+    data << uint32(info.MaxHealth);
+    data << uint16(info.InitialLevel);
+    data << uint8(info.PBOID);
+    // unknown order, figure it out
+    data.WriteBit(info.Captured);
+    data.WriteBit(info.Caged);
+    data.WriteBit(info.SeenAction);
+    //
+    data.WriteBit(info.AwardedXP);
+    data.FlushBits();
+
+    return data;
+}
+
+WorldPacket const* WorldPackets::BattlePet::PetBattleFinalRound::Write()
+{
+    _worldPacket.WriteBit(Abandoned);
+    _worldPacket.WriteBit(PvpBattle);
+
+    for (uint8 i = 0; i < 2; ++i)
+        _worldPacket.WriteBit(Winners[i]);
+
+    _worldPacket.FlushBits();
+
+    for (uint8 i = 0; i < 2; ++i)
+        _worldPacket << uint32(NpcCreatureID[i]);
+
+    _worldPacket << uint32(Pets.size());
+
+    for (auto pet : Pets)
+        _worldPacket << pet;
+
+    return &_worldPacket;
+}
+
 WorldPacket const* WorldPackets::BattlePet::PetBattleReplacementsMade::Write()
 {
     _worldPacket << RoundResult;

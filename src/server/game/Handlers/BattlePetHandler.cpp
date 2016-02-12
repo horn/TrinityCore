@@ -157,8 +157,13 @@ void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput&
         case PETBATTLE_CHANGE_PET:
             battle->SwapPet(_player, uint8(petBattleInput.NewFrontPet));
             break;
+        case PETBATTLE_MOVE_TYPE_UNK1:
+            battle->ForfeitBattle(_player);
+            break;
+        case PETBATTLE_MOVE_TYPE_UNK3: // how to react on this?
+            break;
         default:
-            return;
+            break;
     }
 }
 
