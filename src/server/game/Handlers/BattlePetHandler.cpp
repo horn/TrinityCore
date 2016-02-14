@@ -127,7 +127,12 @@ void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBatt
         }
     }
     else
+    {
         battle->StartBattle();
+        if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
+            challenger->SetRooted(true);
+        _player->SetRooted(true);
+    }
 }
 
 void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
@@ -137,6 +142,7 @@ void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattle
 
     PetBattle* battle = new PetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo);
     battle->StartBattle();
+    _player->SetRooted(true);
 }
 
 void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& /*petBattleFinalNotify*/)
@@ -144,6 +150,7 @@ void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattle
     // SMSG_PET_BATTLE_FINISHED
     WorldPackets::BattlePet::PetBattleFinished finished;
     SendPacket(finished.Write());
+    _player->SetRooted(false);
 }
 
 void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput)

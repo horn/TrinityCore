@@ -1145,6 +1145,17 @@ void Creature::SelectLevel()
     uint8 level = minlevel == maxlevel ? minlevel : urand(minlevel, maxlevel);
     SetLevel(level);
 
+    if (HasFlag(UNIT_NPC_FLAGS, UNIT_NPC_FLAG_WILD_BATTLE_PET))
+    {
+        if (AreaTableEntry const* areaEntry = sAreaTableStore.LookupEntry(GetAreaId()))
+        {
+            uint8 minBattlePetLevel = areaEntry->WildBattlePetLevelMin;
+            uint8 maxBattlPetLevel = areaEntry->WildBattlePetLevelMax;
+            uint8 battlePetlevel = maxlevel ? minBattlePetLevel : urand(minBattlePetLevel, maxBattlPetLevel);
+            SetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL, battlePetlevel);
+        }
+    }
+
     CreatureBaseStats const* stats = sObjectMgr->GetCreatureBaseStats(level, cInfo->unit_class);
 
     // health

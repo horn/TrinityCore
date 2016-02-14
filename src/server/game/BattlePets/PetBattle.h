@@ -140,6 +140,7 @@ private:
     uint8 _round = 0;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
+    WorldPackets::BattlePet::PlayerUpdate GetCreatureUpdateInfo(Creature* creature, uint8& PBOID);
 };
 
 #endif // PetBattle_h__
