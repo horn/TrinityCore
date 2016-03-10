@@ -58,8 +58,8 @@ struct AreaTableEntry
     //uint32    UWAmbience;                                 // 23
     //uint32    WorldPvPID;                                 // 24 World_PVP_Area.dbc
     //uint32    PvPCombastWorldStateID;                     // 25
-    //uint32    WildBattlePetLevelMin;                      // 26
-    //uint32    WildBattlePetLevelMax;                      // 27
+    uint32      WildBattlePetLevelMin;                      // 26
+    uint32      WildBattlePetLevelMax;                      // 27
     //uint32    WindSettingsID;                             // 28
 
     // helpers

@@ -48,29 +48,21 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
         _isPvP = true;
         _forfeitPenalty = 0; // TODO: make this configurable
     }
-    /*else
+    else
     {
-        if (BattlePetSpeciesEntry const* species = sDB2Manager.GetBattlePetSpeciesByCreatureId(target.GetEntry()))
+        
+        // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
+        // fake player - NYI
+        // generate pet teams (prepared or random) - next big sql awaits, yay!
+        // find out what to do with BattlePetNPCTeamMember.db2
+        if (Creature* wildPet = ObjectAccessor::GetCreature(*player, target))
         {
-            // CMSG_PET_BATTLE_REQUEST_WILD or spell casts (from spellclick - menagerie, from gossip - tamers, Kura etc.)
-            // fake player - NYI
-            // generate pet teams (prepared or random) - next big sql awaits, yay!
-            // find out what to do with BattlePetNPCTeamMember.db2
-            WorldPackets::BattlePet::PlayerUpdate update;
-            init.InitialWildPetGuid = target;
-            init.ForfeitPenalty = 10; // TODO: make this configurable
-            if (Creature* wildPet = ObjectAccessor::GetCreature(*player, target))
-            {
-                // TODO: make teams
-                WorldPackets::BattlePet::PetBattlePetUpdateInfo pet;
-                pet.JournalInfo->Species = species->ID;
-                pet.JournalInfo->CreatureID = wildPet->GetDisplayId(); // creature id or display id? figure out this mess
-                pet.JournalInfo->CollarID = 0; // unknown
-                pet.JournalInfo->Level = wildPet->GetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL); // TODO: add this field to wild pets
-                update.Pets.push_back(pet);
-            }
+            _participants[1].creature = wildPet;
+            _participants[1].playerUpdate = GetCreatureUpdateInfo(wildPet, PBOID);
         }
-    }*/
+
+        _forfeitPenalty = 10;
+    }
 
     PBOID = 6;
 }
@@ -91,7 +83,7 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
 
     update.Guid = player->GetGUID();
     update.TrapAbilityID = TrapSpells[battlePetMgr->GetTrapLevel()];
-    update.TrapStatus = 6; // ?
+    update.TrapStatus = 6; // found 4 and 6 in sniffs, 4 in PVE battles, 6 in PVP battles
     update.RoundTimeSecs = 30;
     update.InputFlags = 8; // ? 8 allows you to choose which battle pet goes first
 
@@ -134,6 +126,33 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
     return update;
 }
 
+WorldPackets::BattlePet::PlayerUpdate PetBattle::GetCreatureUpdateInfo(Creature* creature, uint8& PBOID)
+{
+    WorldPackets::BattlePet::PlayerUpdate update;
+    // when PVE pet battle then empty GUID
+    // round time secs are 0 for creatures
+    // trapAbility is 0
+    update.TrapStatus = 2; // in sniff found always 2 for creatures
+    update.InputFlags = 6; // different then for players, creature should not have option to choose pet
+
+    // depend on type of wild battle (some kind of loop will be needed according to pet teams - NYI)
+    // team 1: 748, 749, 752
+    // team 2: 749, 752, 747
+    // team 3: 1637, 1643, 1644
+    // team 4: 1483, 1484, 1485
+
+    if (BattlePetSpeciesEntry const* species = sDB2Manager.GetBattlePetSpeciesByCreatureId(creature->GetEntry()))
+    {
+        WorldPackets::BattlePet::PetBattlePetUpdateInfo pet;
+        pet.JournalInfo->Species = species->ID;
+        pet.JournalInfo->CreatureID = creature->GetDisplayId(); // creature id or display id? figure out this mess
+        pet.JournalInfo->CollarID = 0; // unknown
+        pet.JournalInfo->Level = creature->GetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL);
+    }
+
+    return update;
+}
+
 void PetBattle::StartBattle()
 {
     WorldPackets::BattlePet::PetBattleFinalizeLocation finalLoc;
@@ -162,10 +181,6 @@ void PetBattle::StartBattle()
     init.ForfeitPenalty = _forfeitPenalty;
 
     NotifyParticipants(init.Write());
-
-    /*_participants[0].player->SetRooted(true); // inaccessible, must be called from WorldSession
-    if (_isPvP)
-        _participants[1].player->SetRooted(true);*/
 }
 
 // don't call this on battle interrupt (we should only unroot players, send SMSG_PET_BATTLE_FINISHED and delete battle in this case)
