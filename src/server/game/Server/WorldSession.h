@@ -497,6 +497,10 @@ namespace WorldPackets
         class PetAbandon;
         class PetStopAttack;
         class PetSpellAutocast;
+        class PetRename;
+        class PetAction;
+        class PetCancelAura;
+        class PetSetAction;
     }
 
     namespace Petition
@@ -794,10 +798,11 @@ enum BFLeaveReason
 
 enum ChatRestrictionType
 {
-    ERR_CHAT_RESTRICTED = 0,
-    ERR_CHAT_THROTTLED  = 1,
-    ERR_USER_SQUELCHED  = 2,
-    ERR_YELL_RESTRICTED = 3
+    ERR_CHAT_RESTRICTED      = 0,
+    ERR_CHAT_THROTTLED       = 1,
+    ERR_USER_SQUELCHED       = 2,
+    ERR_YELL_RESTRICTED      = 3,
+    ERR_CHAT_RAID_RESTRICTED = 4
 };
 
 enum CharterTypes
@@ -1445,7 +1450,7 @@ class WorldSession
         void HandleChatMessageEmoteOpcode(WorldPackets::Chat::ChatMessageEmote& chatMessageEmote);
         void SendChatPlayerNotfoundNotice(std::string const& name);
         void SendPlayerAmbiguousNotice(std::string const& name);
-        void SendChatRestrictedNotice(ChatRestrictionType restriction);
+        void SendChatRestricted(ChatRestrictionType restriction);
         void HandleTextEmoteOpcode(WorldPackets::Chat::CTextEmote& packet);
         void HandleChatIgnoredOpcode(WorldPackets::Chat::ChatReportIgnored& chatReportIgnored);
 
@@ -1478,13 +1483,13 @@ class WorldSession
         void HandleTutorialFlag(WorldPackets::Misc::TutorialSetFlag& packet);
 
         //Pet
-        void HandlePetAction(WorldPacket& recvData);
+        void HandlePetAction(WorldPackets::Pet::PetAction& packet);
         void HandlePetStopAttack(WorldPackets::Pet::PetStopAttack& packet);
         void HandlePetActionHelper(Unit* pet, ObjectGuid guid1, uint32 spellid, uint16 flag, ObjectGuid guid2, float x, float y, float z);
         void HandleQueryPetName(WorldPackets::Query::QueryPetName& packet);
-        void HandlePetSetAction(WorldPacket& recvData);
+        void HandlePetSetAction(WorldPackets::Pet::PetSetAction& packet);
         void HandlePetAbandon(WorldPackets::Pet::PetAbandon& packet);
-        void HandlePetRename(WorldPacket& recvData);
+        void HandlePetRename(WorldPackets::Pet::PetRename& packet);
         void HandlePetCancelAuraOpcode(WorldPackets::Spells::PetCancelAura& packet);
         void HandlePetSpellAutocastOpcode(WorldPackets::Pet::PetSpellAutocast& packet);
         void HandlePetCastSpellOpcode(WorldPackets::Spells::PetCastSpell& petCastSpell);

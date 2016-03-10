@@ -2861,7 +2861,17 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
     {
         m_castItemGUID = m_CastItem->GetGUID();
         m_castItemEntry = m_CastItem->GetEntry();
-        m_castItemLevel = int32(m_CastItem->GetItemLevel(m_CastItem->GetOwner()));
+
+        if (Player* owner = m_CastItem->GetOwner())
+            m_castItemLevel = int32(m_CastItem->GetItemLevel(owner));
+        else if (m_CastItem->GetOwnerGUID() == m_caster->GetGUID())
+            m_castItemLevel = int32(m_CastItem->GetItemLevel(m_caster->ToPlayer()));
+        else
+        {
+            SendCastResult(SPELL_FAILED_EQUIPPED_ITEM);
+            finish(false);
+            return;
+        }
     }
 
     InitExplicitTargets(*targets);
@@ -6407,11 +6417,11 @@ void Spell::Delayed() // only called in DealDamage()
 
     TC_LOG_DEBUG("spells", "Spell %u partially interrupted for (%d) ms at damage", m_spellInfo->Id, delaytime);
 
-    WorldPacket data(SMSG_SPELL_DELAYED, 8+4);
-    data << m_caster->GetPackGUID();
-    data << uint32(delaytime);
+    WorldPackets::Spells::SpellDelayed spellDelayed;
+    spellDelayed.Caster = m_caster->GetGUID();
+    spellDelayed.ActualDelay = delaytime;
 
-    m_caster->SendMessageToSet(&data, true);
+    m_caster->SendMessageToSet(spellDelayed.Write(), true);
 }
 
 void Spell::DelayedChannel()
