@@ -154,13 +154,19 @@ void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput&
 
     switch (PetBattleMoveType(petBattleInput.MoveType))
     {
-        case PETBATTLE_CHANGE_PET:
+        case PETBATTLE_MOVE_PET_SWAP:
             battle->SwapPet(_player, uint8(petBattleInput.NewFrontPet));
             break;
         case PETBATTLE_MOVE_TYPE_UNK1:
             battle->ForfeitBattle(_player);
             break;
         case PETBATTLE_MOVE_TYPE_UNK3: // how to react on this?
+            break;
+        case PETBATTLE_MOVE_ABILITY:
+            battle->UseAbility(_player, petBattleInput.AbilityID);
+            break;
+        case PETBATTLE_MOVE_CAGE:
+            battle->UseAbility(_player, TrapSpells[GetBattlePetMgr()->GetTrapLevel()]);
             break;
         default:
             break;

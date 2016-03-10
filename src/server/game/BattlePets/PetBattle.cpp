@@ -19,6 +19,7 @@
 #include "Creature.h"
 #include "ObjectAccessor.h"
 #include "PetBattle.h"
+#include "PetBattleAbility.h"
 #include "Player.h"
 
  // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
@@ -253,6 +254,10 @@ void PetBattle::SwapPet(Player* player, uint8 frontPet)
     tar.Petx = (playerId ? PBOID_P1_PET_0 : PBOID_P0_PET_0) + frontPet; // "second" player's pboid starts at 3
     eff.Targets.push_back(tar);
     eff.CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar.Petx; // on first round, caster is the same as target
+
+    if (_round && tar.Petx == _participants[playerId].playerUpdate.FrontPet) // pass round
+        eff.Flags = 1;
+
     _participants[playerId].playerUpdate.FrontPet = tar.Petx; // not sure if we can store it here
     _roundResult.Effects.push_back(eff);
 
@@ -267,6 +272,11 @@ void PetBattle::ForfeitBattle(Player* player)
         return; // TODO: in this case we should probably remember that player wants to forfeit battle and do it in next round instead of ignoring it
 
     RegisterMove(playerId);
+}
+
+void PetBattle::UseAbility(Player* player, uint32 ability)
+{
+
 }
 
 void PetBattle::NotifyParticipants(const WorldPacket* packet)
