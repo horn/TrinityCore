@@ -16,15 +16,16 @@
 */
 
 #include "PetBattleAbility.h"
+#include "Log.h"
 
 std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectInfo> PetBattleAbility::_effectsInfo
 {
     //{EFFECT_DO_NOTHING,      {TARGET_NONE}},
-    {EFFECT_STANDARD_HEAL,   {PETBATTLE_EFFECT_TYPE_SET_HEALTH, TARGET_CASTER}},
-    {EFFECT_STANDARD_DAMAGE, {PETBATTLE_EFFECT_TYPE_SET_HEALTH, TARGET_CASTER}},
-    {EFFECT_PET_TRAP,        {PETBATTLE_EFFECT_TYPE_STATUS_CHANGE, TARGET_ENEMY}},
+    {EFFECT_STANDARD_HEAL,   {PETBATTLE_EFFECT_TYPE_SET_HEALTH,    TARGET_CASTER, &PetBattleAbility::EffectNULL}},
+    {EFFECT_STANDARD_DAMAGE, {PETBATTLE_EFFECT_TYPE_SET_HEALTH,    TARGET_CASTER, &PetBattleAbility::EffectDealDamage}},
+    {EFFECT_PET_TRAP,        {PETBATTLE_EFFECT_TYPE_STATUS_CHANGE, TARGET_ENEMY,  &PetBattleAbility::EffectNULL}},
     //{EFFECT_APPLY_AURA_26,   TARGET_ENEMY}, 
-    {EFFECT_INCREASING_DAMAGE, {PETBATTLE_EFFECT_TYPE_SET_HEALTH, TARGET_CASTER}},
+    //{EFFECT_INCREASING_DAMAGE, {PETBATTLE_EFFECT_TYPE_SET_HEALTH, TARGET_CASTER}},
     /*{EFFECT_APPLY_AURA_28
     {EFFECT_DEAL_DAMAGE_IF_STATE
     {EFFECT_SET_STATE
@@ -50,3 +51,18 @@ std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectInfo> Pet
     {EFFECT_DEAL_DOUBLE_DAMAGE_BELOW_25_PCT, TARGET_ENEMY}
     {EFFECT_EQUALIZE_HEALTH*/
 };
+
+void PetBattleAbility::EffectNULL()
+{
+    //TC_LOG_ERROR("server", "Received battle pet ability %s (ID: %u) with unhandled effect %s");
+}
+
+void PetBattleAbility::EffectUnused()
+{
+
+}
+
+void PetBattleAbility::EffectDealDamage()
+{
+    // target->SetHealth(target->GetHealth() - effect->points); // points modified by power and stuff
+}

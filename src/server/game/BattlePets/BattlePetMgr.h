@@ -117,7 +117,7 @@ enum BattlePetSaveInfo
 };
 
 uint32 const TrapSpells[4] = { 427, 77, 135, 1368 };
-BattlePetState const FamilyStates[10] =
+BattlePetState const FamilyStates[BATTLE_PET_FAMILY_MAX] =
 {
     STATE_PASSIVE_HUMANOID,
     STATE_PASSIVE_DRAGON,

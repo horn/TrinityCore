@@ -71,6 +71,49 @@ struct BarberShopStyleEntry
     uint32 Data;                                                    // 7 (real ID to hair/facial hair)
 };
 
+struct BattlePetAbilityEntry
+{
+    uint32 ID;                                                      // 0
+    uint32 School;                                                  // 1
+    uint32 IconFileID;                                              // 2
+    uint32 Cooldown;                                                // 3
+    uint32 Unk1;                                                    // 4
+    uint32 Unk2;                                                    // 5
+    LocalizedString* Name;                                          // 6
+    LocalizedString* Description;                                   // 7
+};
+
+#define BATTLE_PET_EFFECT_PROPERTIES_COUNT 6
+
+struct BattlePetAbilityEffectEntry
+{
+    uint32 ID;                                                      // 0
+    uint32 TurnID;                                                  // 1
+    uint32 Unk1;                                                    // 2
+    uint32 AuraID;                                                  // 3
+    uint32 EffectPropertiesID;                                      // 4
+    uint32 Effect;                                                  // 5
+    uint32 PropertyValue[BATTLE_PET_EFFECT_PROPERTIES_COUNT];       // 6
+};
+
+struct BattlePetAbilityStateEntry
+{
+    uint32 ID;                                                      // 0
+    uint32 AbilityID;                                               // 1
+    uint32 State;                                                   // 2
+    int32 Value;                                                    // 3
+};
+
+struct BattlePetAbilityTurnEntry
+{
+    uint32 ID;                                                      // 0
+    uint32 AbilityID;                                               // 1
+    uint32 Unk1;                                                    // 2
+    uint32 Turn;                                                    // 3
+    uint32 HasProcType;                                             // 4
+    uint32 ProcType;                                                // 5
+};
+
 struct BattlePetBreedQualityEntry
 {
     uint32 ID;                                                      // 0

@@ -65,11 +65,31 @@ enum PetBattleAbilityEffectName
     EFFECT_UNUSED_58                        = 58,
     EFFECT_DEAL_DAMAGE_IF_LESS_HP           = 59,
     EFFECT_HEAL_PCT_CONSUME_CORPSE          = 61, // Consume Corpse
-    EFFECT_DEAL_DAMAGE_PCT_OF_HP            = 62,
+    EFFECT_DEAL_DAMAGE_PCT_OF_MAX_HP        = 62,
     EFFECT_APPLY_AURA_63                    = 63, // Tranquility, Photosynthesis, Wish, Renewing Mists
     EFFECT_DEAL_DAMAGE_WITH_BONUS           = 65, // Creeping Fungus
     EFFECT_DEAL_DOUBLE_DAMAGE_BELOW_25_PCT  = 66,
     EFFECT_EQUALIZE_HEALTH                  = 67,
+    EFFECT_DEAL_DAMAGE_PCT_OF_USERS_MAX_HP  = 68,
+    EFFECT_APPLY_OR_CONSUME_AURA_TO_HEAL    = 72, // Stockpile
+    EFFECT_UNUSED_73                        = 73,
+    EFFECT_INITIALIZE_PET_BATTLE            = 74, // Pet Battle Initializer (Initializes pet auras and health.)
+    EFFECT_APPLY_OR_CONSUME_AURA_TO_DMG_75  = 75, // Launch Rocket
+    EFFECT_APPLY_OR_CONSUME_AURA_TO_DMG_76  = 76, // Pump, Barel Toss, Wind-Up
+    EFFECT_APPLY_OR_CONSUME_AURA_TO_DMG_77  = 77, // Lock-On, GM Unkillable (?)
+    //EFFECT_APPLY_ 78
+    EFFECT_STATE_CHANGE                     = 79,
+    EFFECT_WEATHER                          = 80,
+    //EFFECT                                = 85, // something with states (destroy objects and type override)
+    //EFFECT                                = 86, // Gravity (apply aura 2, if used on the same target, apply aura 1)
+    EFFECT_DEAL_DAMAGE_HIT_CHANCE_CONDITION = 96,
+    EFFECT_UNUSED_97                        = 97,
+    EFFECT_UNUSED_99                        = 99,
+    EFFECT_HEAL_WITH_PET_TYPE_CONDITION     = 100, // Rebuild, Healing Stream
+    EFFECT_DEAL_DAMAGE_IF_FIRST             = 103,
+    EFFECT_HEAL_WITH_STATE_CONDITION        = 104,
+
+    EFFECT_INSTA_KILL_CASTER                = 135,
 };
 
 // custom
@@ -109,7 +129,7 @@ enum PetBattleEffectType
 
 enum PetBattleEffectTargetEx
 {
-    PET_BATTLE_EFFECT_TARGET_EX_NONE            = 0, // not sure about the value
+    PET_BATTLE_EFFECT_TARGET_EX_NONE            = 0,
     PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE       = 1,
     PET_BATTLE_EFFECT_TARGET_EX_AURA            = 2,
     PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE     = 3,
@@ -119,14 +139,38 @@ enum PetBattleEffectTargetEx
     PET_BATTLE_EFFECT_TARGET_EX_STATE           = 7
 };
 
+PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
+{
+    PET_BATTLE_EFFECT_TARGET_EX_PET,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STATE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,     // not verified
+    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY,
+    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE,  // not verified
+    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE
+};
+
 class PetBattleAbility
 {
+public:
+    void EffectNULL();
+    void EffectUnused();
+    void EffectDealDamage();
 
 private:
     struct EffectInfo
     {
         PetBattleEffectType type;
         PetBattleEffectTarget implicitTarget;
+        void(PetBattleAbility::*function)();
     };
     static std::unordered_map<PetBattleAbilityEffectName, EffectInfo> _effectsInfo;
 };
