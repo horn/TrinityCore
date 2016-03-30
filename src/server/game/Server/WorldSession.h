@@ -129,6 +129,12 @@ namespace WorldPackets
         class RequestRatedBattlefieldInfo;
     }
 
+    namespace Battlenet
+    {
+        class Request;
+        class RequestRealmListTicket;
+    }
+
     namespace BattlePet
     {
         class BattlePetRequestJournal;
@@ -711,6 +717,16 @@ namespace WorldPackets
     };
 }
 
+namespace google
+{
+    namespace protobuf
+    {
+        class Message;
+    }
+}
+
+namespace pb = google::protobuf;
+
 enum AccountDataType
 {
     GLOBAL_CONFIG_CACHE             = 0,                    // 0x01 g
@@ -870,10 +886,11 @@ struct PacketCounter
 };
 
 /// Player session in the World
-class WorldSession
+class TC_GAME_API WorldSession
 {
     public:
-        WorldSession(uint32 id, std::string&& name, uint32 battlenetAccountId, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
+        WorldSession(uint32 id, std::string&& name, uint32 battlenetAccountId, std::shared_ptr<WorldSocket> sock, AccountTypes sec, uint8 expansion, time_t mute_time,
+            std::string os, LocaleConstant locale, uint32 recruiter, bool isARecruiter);
         ~WorldSession();
 
         bool PlayerLoading() const { return !m_playerLoading.IsEmpty(); }
@@ -896,7 +913,7 @@ class WorldSession
         void SendSetPhaseShift(std::set<uint32> const& phaseIds, std::set<uint32> const& terrainswaps, std::set<uint32> const& worldMapAreaSwaps);
         void SendQueryTimeResponse();
 
-        void SendAuthResponse(uint8 code, bool queued, uint32 queuePos = 0);
+        void SendAuthResponse(uint32 code, bool queued, uint32 queuePos = 0);
         void SendClientCacheVersion(uint32 version);
 
         void InitializeSession();
@@ -911,6 +928,7 @@ class WorldSession
         AccountTypes GetSecurity() const { return _security; }
         uint32 GetAccountId() const { return _accountId; }
         ObjectGuid GetAccountGUID() const { return ObjectGuid::Create<HighGuid::WowAccount>(GetAccountId()); }
+        std::string const& GetAccountName() const { return _accountName; }
         uint32 GetBattlenetAccountId() const { return _battlenetAccountId; }
         ObjectGuid GetBattlenetAccountGUID() const { return ObjectGuid::Create<HighGuid::BNetAccount>(GetBattlenetAccountId()); }
         Player* GetPlayer() const { return _player; }
@@ -921,8 +939,9 @@ class WorldSession
         std::string const& GetRemoteAddress() const { return m_Address; }
         void SetPlayer(Player* player);
         uint8 GetExpansion() const { return m_expansion; }
+        std::string const& GetOS() const { return _os; }
 
-        void InitWarden(BigNumber* k, std::string const& os);
+        void InitWarden(BigNumber* k);
 
         /// Session in auth.queue currently
         void SetInQueue(bool state) { m_inQueue = state; }
@@ -1526,7 +1545,7 @@ class WorldSession
         void HandleBfQueueInviteResponse(WorldPackets::Battlefield::BFMgrQueueInviteResponse& bfMgrQueueInviteResponse);
         void HandleBfQueueExitRequest(WorldPackets::Battlefield::BFMgrQueueExitRequest& bfMgrQueueExitRequest);
 
-        
+
         void HandleWorldTeleportOpcode(WorldPackets::Misc::WorldTeleport& worldTeleport);
         void HandleMinimapPingOpcode(WorldPackets::Party::MinimapPingClient& packet);
         void HandleRandomRollOpcode(WorldPackets::Misc::RandomRollClient& packet);
@@ -1690,6 +1709,20 @@ class WorldSession
         // Warden
         void HandleWardenData(WorldPackets::Warden::WardenData& packet);
 
+        // Battlenet
+        void HandleBattlenetRequest(WorldPackets::Battlenet::Request& request);
+        void HandleBattlenetRequestRealmListTicket(WorldPackets::Battlenet::RequestRealmListTicket& requestRealmListTicket);
+
+        void SendBattlenetResponse(uint32 serviceHash, uint32 methodId, uint32 token, pb::Message const* response);
+        void SendBattlenetResponse(uint32 serviceHash, uint32 methodId, uint32 token, uint32 status);
+        void SendBattlenetRequest(uint32 serviceHash, uint32 methodId, pb::Message const* request, std::function<void(MessageBuffer)> callback);
+        void SendBattlenetRequest(uint32 serviceHash, uint32 methodId, pb::Message const* request);
+
+        std::array<uint8, 32> const& GetRealmListSecret() const { return _realmListSecret; }
+        void SetRealmListSecret(std::array<uint8, 32> const& secret) { memcpy(_realmListSecret.data(), secret.data(), secret.size()); }
+
+        std::unordered_map<uint32, uint8> const& GetRealmCharacterCounts() const { return _realmCharacterCounts; }
+
         union ConnectToKey
         {
             struct
@@ -1785,6 +1818,12 @@ class WorldSession
         std::string _accountName;
         uint32 _battlenetAccountId;
         uint8 m_expansion;
+        std::string _os;
+
+        std::array<uint8, 32> _realmListSecret;
+        std::unordered_map<uint32 /*realmAddress*/, uint8> _realmCharacterCounts;
+        std::unordered_map<uint32, std::function<void(MessageBuffer)>> _battlenetResponseCallbacks;
+        uint32 _battlenetRequestToken;
 
         typedef std::list<AddonInfo> AddonsList;
 

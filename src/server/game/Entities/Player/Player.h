@@ -115,7 +115,7 @@ struct PlayerSpell
     bool disabled          : 1;                             // first rank has been learned in result talent learn but currently talent unlearned, save max learned ranks
 };
 
-extern uint32 const MasterySpells[MAX_CLASSES];
+TC_GAME_API extern uint32 const MasterySpells[MAX_CLASSES];
 
 enum TalentSpecialization // talent tabs
 {
@@ -845,39 +845,26 @@ typedef std::vector<ItemPosCount> ItemPosCountVec;
 enum TransferAbortReason
 {
     TRANSFER_ABORT_NONE                          = 0,
-    TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE  = 1,   // You are already locked to %s
-    TRANSFER_ABORT_MAP_NOT_ALLOWED               = 2,   // Map cannot be entered at this time.
-    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER   = 3,   // You are ineligible to participate in at least one encounter in this instance because you are already locked to an instance in which it has been defeated.
-    TRANSFER_ABORT_NOT_FOUND                     = 4,   // Transfer Aborted: instance not found
-    TRANSFER_ABORT_NEED_GROUP                    = 5,   // Transfer Aborted: you must be in a raid group to enter this instance
-    TRANSFER_ABORT_TOO_MANY_REALM_INSTANCES      = 6,   // Additional instances cannot be launched, please try again later.
-    TRANSFER_ABORT_DIFFICULTY                    = 7,   // <Normal, Heroic, Epic> difficulty mode is not available for %s.
-    TRANSFER_ABORT_REALM_ONLY                    = 8,   // All players in the party must be from the same realm to enter %s.
-    TRANSFER_ABORT_NOT_FOUND_2                   = 13,  // Transfer Aborted: instance not found
-    TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY = 15,  // This instance is already in progress. You may only switch difficulties from inside the instance.
-    TRANSFER_ABORT_TOO_MANY_INSTANCES            = 16,  // You have entered too many instances recently.
-    TRANSFER_ABORT_MAX_PLAYERS                   = 17,  // Transfer Aborted: instance is full
-    TRANSFER_ABORT_NOT_FOUND_3                   = 19,  // Transfer Aborted: instance not found
-    TRANSFER_ABORT_ERROR                         = 21,
-    TRANSFER_ABORT_NOT_FOUND_4                   = 23,  // Transfer Aborted: instance not found
-    TRANSFER_ABORT_UNIQUE_MESSAGE                = 24,  // Until you've escaped TLK's grasp, you cannot leave this place!
-    TRANSFER_ABORT_DIFFICULTY_NOT_FOUND          = 27,  // client writes to console "Unable to resolve requested difficultyID %u to actual difficulty for map %d"
-    TRANSFER_ABORT_XREALM_ZONE_DOWN              = 28,  // Transfer Aborted: cross-realm zone is down
-    TRANSFER_ABORT_ZONE_IN_COMBAT                = 29,  // Unable to zone in while an encounter is in progress.
-    TRANSFER_ABORT_INSUF_EXPAN_LVL               = 31,  // You must have <TBC, WotLK> expansion installed to access this area.
-
-    /*
-    // Unknown values - not used by the client to display any error
-    TRANSFER_ABORT_MANY_REALM_INSTANCES
-    TRANSFER_ABORT_AREA_NOT_ZONED
-    TRANSFER_ABORT_TIMEOUT
-    TRANSFER_ABORT_SHUTTING_DOWN
-    TRANSFER_ABORT_PLAYER_CONDITION
-    TRANSFER_ABORT_BUSY
-    TRANSFER_ABORT_DISCONNECTED
-    TRANSFER_ABORT_LOGGING_OUT
-    TRANSFER_ABORT_NEED_SERVER
-    */
+    TRANSFER_ABORT_ERROR                         = 1,
+    TRANSFER_ABORT_MAX_PLAYERS                   = 2,   // Transfer Aborted: instance is full
+    TRANSFER_ABORT_NOT_FOUND                     = 3,   // Transfer Aborted: instance not found
+    TRANSFER_ABORT_TOO_MANY_INSTANCES            = 4,   // You have entered too many instances recently.
+    TRANSFER_ABORT_ZONE_IN_COMBAT                = 6,   // Unable to zone in while an encounter is in progress.
+    TRANSFER_ABORT_INSUF_EXPAN_LVL               = 7,   // You must have <TBC, WotLK> expansion installed to access this area.
+    TRANSFER_ABORT_DIFFICULTY                    = 8,   // <Normal, Heroic, Epic> difficulty mode is not available for %s.
+    TRANSFER_ABORT_UNIQUE_MESSAGE                = 9,   // Until you've escaped TLK's grasp, you cannot leave this place!
+    TRANSFER_ABORT_TOO_MANY_REALM_INSTANCES      = 10,  // Additional instances cannot be launched, please try again later.
+    TRANSFER_ABORT_NEED_GROUP                    = 11,  // Transfer Aborted: you must be in a raid group to enter this instance
+    TRANSFER_ABORT_NOT_FOUND_2                   = 12,  // Transfer Aborted: instance not found
+    TRANSFER_ABORT_NOT_FOUND_3                   = 13,  // Transfer Aborted: instance not found
+    TRANSFER_ABORT_NOT_FOUND_4                   = 14,  // Transfer Aborted: instance not found
+    TRANSFER_ABORT_REALM_ONLY                    = 15,  // All players in the party must be from the same realm to enter %s.
+    TRANSFER_ABORT_MAP_NOT_ALLOWED               = 16,  // Map cannot be entered at this time.
+    TRANSFER_ABORT_LOCKED_TO_DIFFERENT_INSTANCE  = 18,  // You are already locked to %s
+    TRANSFER_ABORT_ALREADY_COMPLETED_ENCOUNTER   = 19,  // You are ineligible to participate in at least one encounter in this instance because you are already locked to an instance in which it has been defeated.
+    TRANSFER_ABORT_DIFFICULTY_NOT_FOUND          = 22,  // client writes to console "Unable to resolve requested difficultyID %u to actual difficulty for map %d"
+    TRANSFER_ABORT_XREALM_ZONE_DOWN              = 24,  // Transfer Aborted: cross-realm zone is down
+    TRANSFER_ABORT_SOLO_PLAYER_SWITCH_DIFFICULTY = 26,  // This instance is already in progress. You may only switch difficulties from inside the instance.
 };
 
 enum NewWorldReason
@@ -1012,7 +999,7 @@ enum PlayerDelayedOperations
 // Player summoning auto-decline time (in secs)
 #define MAX_PLAYER_SUMMON_DELAY                   (2*MINUTE)
 // Maximum money amount : 2^31 - 1
-extern uint64 const MAX_MONEY_AMOUNT;
+TC_GAME_API extern uint64 const MAX_MONEY_AMOUNT;
 
 struct InstancePlayerBind
 {
@@ -1146,7 +1133,7 @@ struct ResurrectionData
 static uint32 const DefaultTalentRowLevels[MAX_TALENT_TIERS] = { 15, 30, 45, 60, 75, 90, 100 };
 static uint32 const DKTalentRowLevels[MAX_TALENT_TIERS] = { 57, 58, 59, 60, 75, 90, 100 };
 
-struct PlayerTalentInfo
+struct TC_GAME_API PlayerTalentInfo
 {
     PlayerTalentInfo() :
         ResetTalentsCost(0), ResetTalentsTime(0),
@@ -1182,7 +1169,7 @@ private:
     PlayerTalentInfo(PlayerTalentInfo const&);
 };
 
-class Player : public Unit, public GridObject<Player>
+class TC_GAME_API Player : public Unit, public GridObject<Player>
 {
     friend class WorldSession;
     friend void Item::AddToUpdateQueueOf(Player* player);
@@ -1813,11 +1800,10 @@ class Player : public Unit, public GridObject<Player>
         void SetResurrectRequestData(Unit* caster, uint32 health, uint32 mana, uint32 appliedAura);
         void ClearResurrectRequestData()
         {
-            delete _resurrectionData;
-            _resurrectionData = nullptr;
+            _resurrectionData.reset();
         }
 
-        bool IsResurrectRequestedBy(ObjectGuid guid) const
+        bool IsResurrectRequestedBy(ObjectGuid const& guid) const
         {
             if (!IsResurrectRequested())
                 return false;
@@ -1825,8 +1811,9 @@ class Player : public Unit, public GridObject<Player>
             return !_resurrectionData->GUID.IsEmpty() && _resurrectionData->GUID == guid;
         }
 
-        bool IsResurrectRequested() const { return _resurrectionData != nullptr; }
+        bool IsResurrectRequested() const { return _resurrectionData.get() != nullptr; }
         void ResurrectUsingRequestData();
+        void ResurrectUsingRequestDataImpl();
 
         uint8 getCinematic() const { return m_cinematic; }
         void setCinematic(uint8 cine) { m_cinematic = cine; }
@@ -2353,9 +2340,8 @@ class Player : public Unit, public GridObject<Player>
         void SetPendingBind(uint32 instanceId, uint32 bindTimer);
         bool HasPendingBind() const { return _pendingBindId > 0; }
         void SendRaidInfo();
-        static void ConvertInstancesToGroup(Player* player, Group* group, bool switchLeader);
         bool Satisfy(AccessRequirement const* ar, uint32 target_map, bool report = false);
-        bool CheckInstanceLoginValid(Map* map);
+        bool CheckInstanceValidity(bool /*isLogin*/);
         bool CheckInstanceCount(uint32 instanceId) const;
         void AddInstanceEnterTime(uint32 instanceId, time_t enterTime);
 
@@ -2685,7 +2671,7 @@ class Player : public Unit, public GridObject<Player>
         void ResetTimeSync();
         void SendTimeSync();
 
-        ResurrectionData* _resurrectionData;
+        std::unique_ptr<ResurrectionData> _resurrectionData;
 
         WorldSession* m_session;
 
@@ -2838,8 +2824,8 @@ class Player : public Unit, public GridObject<Player>
         WorldLocation _corpseLocation;
 };
 
-void AddItemsSetItem(Player* player, Item* item);
-void RemoveItemsSetItem(Player* player, ItemTemplate const* proto);
+TC_GAME_API void AddItemsSetItem(Player* player, Item* item);
+TC_GAME_API void RemoveItemsSetItem(Player* player, ItemTemplate const* proto);
 
 // "the bodies of template functions must be made available in a header file"
 template <class T> T Player::ApplySpellMod(uint32 spellId, SpellModOp op, T &basevalue, Spell* spell)

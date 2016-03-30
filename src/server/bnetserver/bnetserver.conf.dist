@@ -48,18 +48,27 @@ LogsDir = ""
 MaxPingTime = 30
 
 #
-#    WorldserverListenPort
-#        Description: TCP port to listen on for incoming worldserver IPC.
-#        Default:     1118
-
-WorldserverListenPort = 1118
-
-#
 #    BattlenetPort
 #        Description: TCP port to reach the auth server for battle.net connections.
 #        Default:     1119
 
 BattlenetPort = 1119
+
+#
+#    LoginREST.Port
+#        Description: TCP port to reach the REST login method.
+#        Default:     8081
+#
+#    LoginREST.ExternalAddress
+#        Description: IP address sent to clients connecting from outside the network where bnetserver runs
+#
+#    LoginREST.LocalAddress
+#        Description: IP address sent to clients connecting from inside the network where bnetserver runs
+#
+
+LoginREST.Port = 8081
+LoginREST.ExternalAddress=127.0.0.1
+LoginREST.LocalAddress=127.0.0.1
 
 #
 #

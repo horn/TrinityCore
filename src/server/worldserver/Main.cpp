@@ -21,8 +21,6 @@
 /// \file
 
 #include "Common.h"
-#include "Commands.h"
-#include "ZmqContext.h"
 #include "DatabaseEnv.h"
 #include "AsyncAcceptor.h"
 #include "RASession.h"
@@ -35,6 +33,7 @@
 #include "InstanceSaveMgr.h"
 #include "ObjectAccessor.h"
 #include "ScriptMgr.h"
+#include "ScriptLoader.h"
 #include "OutdoorPvP/OutdoorPvPMgr.h"
 #include "BattlegroundMgr.h"
 #include "TCSoap.h"
@@ -42,8 +41,7 @@
 #include "GitRevision.h"
 #include "WorldSocket.h"
 #include "WorldSocketMgr.h"
-#include "BattlenetServerManager.h"
-#include "Realm/Realm.h"
+#include "RealmList.h"
 #include "DatabaseLoader.h"
 #include "AppenderDB.h"
 #include <openssl/opensslv.h>
@@ -51,6 +49,7 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/deadline_timer.hpp>
 #include <boost/program_options.hpp>
+#include <google/protobuf/stubs/common.h>
 
 using namespace boost::program_options;
 
@@ -104,6 +103,8 @@ extern int main(int argc, char** argv)
     // exit if help or version is enabled
     if (vm.count("help") || vm.count("version"))
         return 0;
+
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
 #ifdef _WIN32
     if (configService.compare("install") == 0)
@@ -190,9 +191,12 @@ extern int main(int argc, char** argv)
     // Set server offline (not connectable)
     LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realm.Id.Realm);
 
+    sRealmList->Initialize(_ioService, sConfigMgr->GetIntDefault("RealmsStateUpdateDelay", 10));
+
     LoadRealmInfo();
 
     // Initialize the World
+    sScriptMgr->SetScriptLoader(AddScripts);
     sWorld->SetInitialWorldSettings();
 
     // Launch CliRunnable thread
@@ -222,7 +226,15 @@ extern int main(int argc, char** argv)
     uint16 worldPort = uint16(sWorld->getIntConfig(CONFIG_PORT_WORLD));
     std::string worldListener = sConfigMgr->GetStringDefault("BindIP", "0.0.0.0");
 
-    sWorldSocketMgr.StartNetwork(_ioService, worldListener, worldPort);
+    int networkThreads = sConfigMgr->GetIntDefault("Network.Threads", 1);
+
+    if (networkThreads <= 0)
+    {
+        TC_LOG_ERROR("server.worldserver", "Network.Threads cannot be less than 0");
+        return false;
+    }
+
+    sWorldSocketMgr.StartNetwork(_ioService, worldListener, worldPort, networkThreads);
 
     // Set server online (allow connecting now)
     LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag & ~%u, population = 0 WHERE id = '%u'", REALM_FLAG_OFFLINE, realm.Id.Realm);
@@ -238,10 +250,6 @@ extern int main(int argc, char** argv)
         TC_LOG_INFO("server.worldserver", "Starting up anti-freeze thread (%u seconds max stuck time)...", coreStuckTime);
     }
 
-    sIpcContext->Initialize();
-
-    sBattlenetServer.InitializeConnection();
-
     TC_LOG_INFO("server.worldserver", "%s (worldserver-daemon) ready...", GitRevision::GetFullVersion());
 
     sScriptMgr->OnStartup();
@@ -254,10 +262,6 @@ extern int main(int argc, char** argv)
     sLog->SetSynchronous();
 
     sScriptMgr->OnShutdown();
-
-    sIpcContext->Close();
-
-    sBattlenetServer.CloseConnection();
 
     sWorld->KickAll();                                       // save and kick all players
     sWorld->UpdateSessions(1);                             // real players unload required UpdateSessions call
@@ -274,6 +278,7 @@ extern int main(int argc, char** argv)
 
     // set server offline
     LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realm.Id.Realm);
+    sRealmList->Close();
 
     // Clean up threads if any
     if (soapThread != nullptr)
@@ -294,6 +299,8 @@ extern int main(int argc, char** argv)
     ShutdownCLIThread(cliThread);
 
     OpenSSLCrypto::threadsCleanup();
+
+    google::protobuf::ShutdownProtobufLibrary();
 
     // 0 - normal shutdown
     // 1 - shutdown at error
