@@ -24,10 +24,17 @@
 
 enum BattlePetMisc
 {
-    MAX_PET_BATTLE_SLOTS            = 3,
-    MAX_BATTLE_PETS_PER_SPECIES     = 3,
-    BATTLE_PET_CAGE_ITEM_ID         = 82800,
-    DEFAULT_SUMMON_BATTLE_PET_SPELL = 118301
+    MAX_PET_BATTLE_SLOTS                = 3,
+    MAX_BATTLE_PETS_PER_SPECIES         = 3,
+    MAX_BATTLE_PETS                     = 1000,
+
+    BATTLE_PET_CAGE_ITEM_ID             = 82800,
+
+    SPELL_SUMMON_BATTLE_PET_DEFAULT     = 118301,
+    SPELL_BATTLE_PET_TRAINING_PASSIVE   = 119467,
+    SPELL_TRACK_PETS                    = 122026,
+    SPELL_REVIVE_BATTLE_PETS            = 125439,
+    SPELL_BATTLE_PET_TRAINING           = 125610
 };
 
 enum BattlePetDBFlags
@@ -175,6 +182,9 @@ public:
     void CageBattlePet(ObjectGuid guid);
     void HealBattlePetsPct(uint8 pct);
 
+    TempSummon* GetSummonedPet() { return _summonedPet; }
+    void SetSummonedPet(TempSummon* pet) { _summonedPet = pet; }
+    ObjectGuid GetSummonedPetGuid() { return _summonedPetGuid; }
     void SummonPet(ObjectGuid guid);
 
     void SendUpdates(std::vector<BattlePet> pets, bool petAdded);
@@ -187,6 +197,8 @@ public:
 private:
     WorldSession* _owner;
     PetBattle* _battle = nullptr;
+    ObjectGuid _summonedPetGuid;
+    TempSummon* _summonedPet = nullptr;
     uint16 _trapLevel = 0;
     std::unordered_map<uint64 /*battlePetGuid*/, BattlePet> _pets;
     std::vector<WorldPackets::BattlePet::BattlePetSlot> _slots;

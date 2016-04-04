@@ -437,6 +437,8 @@ class TC_GAME_API Spell
         void EffectHealBattlePetPct(SpellEffIndex effIndex);
         void EffectEnableBattlePets(SpellEffIndex effIndex);
         void EffectUncageBattlePet(SpellEffIndex effIndex);
+        void EffectGrantBattlePetLevel(SpellEffIndex effIndex);
+        void EffectChangeBattlePetQuality(SpellEffIndex effIndex);
         void EffectCreateHeirloomItem(SpellEffIndex effIndex);
         void EffectUpgradeHeirloom(SpellEffIndex effIndex);
 

@@ -16,6 +16,7 @@
  */
 
 #include "BattlePetPackets.h"
+#include "PetBattleAbility.h"
 #include "World.h"
 
 ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::BattlePetSlot const& slot)
@@ -412,30 +413,30 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::RoundResult co
 
             switch (target.Type)
             {
-                case 1:
+                case PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE:
                     data << int32(target.BroadcastTextID);
                     break;                
-                case 2:
+                case PET_BATTLE_EFFECT_TARGET_EX_AURA:
                     data << int32(target.AuraInstanceID);
                     data << int32(target.AuraAbilityID);
                     data << int32(target.RoundsRemaining);
                     data << int32(target.CurrentRound);
                     break;
-                case 3:
+                case PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE:
                     data << int32(target.NewStatValue);
                     break;
-                case 4:
+                case PET_BATTLE_EFFECT_TARGET_EX_PET:
                     data << int32(target.Health);
                     break;
-                case 5:
+                case PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE:
                     data << int32(target.ChangedAbilityID);
                     data << int32(target.CooldownRemaining);
                     data << int32(target.LockdownRemaining);
                     break;
-                case 6:
+                case PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY:
                     data << int32(target.TriggerAbilityID);
                     break;
-                case 7:
+                case PET_BATTLE_EFFECT_TARGET_EX_STATE:
                     data << int32(target.StateID);
                     data << int32(target.StateValue);
                     break;

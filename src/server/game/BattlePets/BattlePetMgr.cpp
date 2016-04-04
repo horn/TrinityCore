@@ -481,6 +481,14 @@ void BattlePetMgr::HealBattlePetsPct(uint8 pct)
 
 void BattlePetMgr::SummonPet(ObjectGuid guid)
 {
+    if (!_summonedPetGuid.IsEmpty() && _summonedPetGuid == guid)
+    {
+        _summonedPet->UnSummon();
+        _summonedPet = nullptr;
+        _summonedPetGuid = ObjectGuid::Empty;
+        return;
+    }
+
     BattlePet* pet = GetPet(guid);
     if (!pet)
         return;
@@ -489,10 +497,10 @@ void BattlePetMgr::SummonPet(ObjectGuid guid)
     if (!speciesEntry)
         return;
 
-    // TODO: set proper CreatureID for spell DEFAULT_SUMMON_BATTLE_PET_SPELL (default EffectMiscValueA is 40721 - Murkimus the Gladiator)
-    _owner->GetPlayer()->CastSpell(_owner->GetPlayer(), speciesEntry->SummonSpellID ? speciesEntry->SummonSpellID : uint32(DEFAULT_SUMMON_BATTLE_PET_SPELL));
-
-    // TODO: set pet level, quality... update fields
+    // TODO: try to find better way (_summonedPetGuid, _summonedPet)
+    //       also if SummonCreature fails for some reason we should set this back to ObjectGuid::Empty
+    _summonedPetGuid = guid;
+    _owner->GetPlayer()->CastSpell(_owner->GetPlayer(), speciesEntry->SummonSpellID ? speciesEntry->SummonSpellID : uint32(SPELL_SUMMON_BATTLE_PET_DEFAULT));
 }
 
 void BattlePetMgr::SendUpdates(std::vector<BattlePet> pets, bool petAdded)

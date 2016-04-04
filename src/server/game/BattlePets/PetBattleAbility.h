@@ -18,7 +18,7 @@
 #ifndef PetBattleAbility_h__
 #define PetBattleAbility_h__
 
-#include <unordered_map>
+#include "BattlePetPackets.h"
 
 enum PetBattleAbilityProcType
 {
@@ -161,16 +161,20 @@ PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
 class PetBattleAbility
 {
 public:
-    void EffectNULL();
-    void EffectUnused();
-    void EffectDealDamage();
+    PetBattleAbility(WorldPackets::BattlePet::PetBattlePetUpdateInfo caster) : _caster(caster) { }
+
+    void EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
+    void EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
+    void EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
 
 private:
+    WorldPackets::BattlePet::PetBattlePetUpdateInfo _caster;
+
     struct EffectInfo
     {
         PetBattleEffectType type;
         PetBattleEffectTarget implicitTarget;
-        void(PetBattleAbility::*function)();
+        void(PetBattleAbility::*function)(WorldPackets::BattlePet::PetBattlePetUpdateInfo effectTarget);
     };
     static std::unordered_map<PetBattleAbilityEffectName, EffectInfo> _effectsInfo;
 };

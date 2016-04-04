@@ -52,17 +52,17 @@ std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectInfo> Pet
     {EFFECT_EQUALIZE_HEALTH*/
 };
 
-void PetBattleAbility::EffectNULL()
+void PetBattleAbility::EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo)
 {
     //TC_LOG_ERROR("server", "Received battle pet ability %s (ID: %u) with unhandled effect %s");
 }
 
-void PetBattleAbility::EffectUnused()
+void PetBattleAbility::EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo)
 {
 
 }
 
-void PetBattleAbility::EffectDealDamage()
+void PetBattleAbility::EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo)
 {
     // target->SetHealth(target->GetHealth() - effect->points); // points modified by power and stuff
 }

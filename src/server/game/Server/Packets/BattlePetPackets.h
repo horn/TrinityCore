@@ -270,7 +270,7 @@ namespace WorldPackets
             uint16 CooldownRemaining = 0;
             uint16 LockdownRemaining = 0; // what's this?
             uint8 Slot = 0;
-            uint8 PBOID = 0; // PetBattleObjectID?
+            uint8 PBOID = 0;
         };
 
         struct BattlePetAura
@@ -375,7 +375,7 @@ namespace WorldPackets
 
         struct PetBattleEffectTarget
         {
-            uint8 Type = 0; // should be enum
+            uint8 Type = 0;
             uint8 Petx = 0;
             uint32 AuraInstanceID = 0;
             uint32 AuraAbilityID = 0;

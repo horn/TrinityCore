@@ -269,7 +269,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectEnableBattlePets,                         //201 SPELL_EFFECT_ENABLE_BATTLE_PETS
     &Spell::EffectNULL,                                     //202 SPELL_EFFECT_202
     &Spell::EffectNULL,                                     //203 SPELL_EFFECT_203
-    &Spell::EffectNULL,                                     //204 SPELL_EFFECT_CHANGE_BATTLEPET_QUALITY
+    &Spell::EffectChangeBattlePetQuality,                   //204 SPELL_EFFECT_CHANGE_BATTLEPET_QUALITY
     &Spell::EffectNULL,                                     //205 SPELL_EFFECT_LAUNCH_QUEST_CHOICE
     &Spell::EffectNULL,                                     //206 SPELL_EFFECT_206
     &Spell::EffectNULL,                                     //207 SPELL_EFFECT_LAUNCH_QUEST_TASK
@@ -290,7 +290,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectCreateHeirloomItem,                       //222 SPELL_EFFECT_CREATE_HEIRLOOM_ITEM
     &Spell::EffectNULL,                                     //223 SPELL_EFFECT_CHANGE_ITEM_BONUSES
     &Spell::EffectActivateGarrisonBuilding,                 //224 SPELL_EFFECT_ACTIVATE_GARRISON_BUILDING
-    &Spell::EffectNULL,                                     //225 SPELL_EFFECT_GRANT_BATTLEPET_LEVEL
+    &Spell::EffectGrantBattlePetLevel,                      //225 SPELL_EFFECT_GRANT_BATTLEPET_LEVEL
     &Spell::EffectNULL,                                     //226 SPELL_EFFECT_226
     &Spell::EffectNULL,                                     //227 SPELL_EFFECT_227
     &Spell::EffectNULL,                                     //228 SPELL_EFFECT_228
@@ -2169,11 +2169,35 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                 }
                 case SUMMON_TYPE_MINIPET:
                 {
+                    // REALLY NOT SURE ABOUT THIS, can npcs summon minipets too?
+                    Player* caster = m_caster->ToPlayer();
+                    if (!caster)
+                        return;
+
+                    BattlePetMgr* battlePetMgr = caster->GetSession()->GetBattlePetMgr();
+                    if (!battlePetMgr)
+                        return;
+
+                    BattlePetMgr::BattlePet* battlePet = battlePetMgr->GetPet(battlePetMgr->GetSummonedPetGuid());
+                    if (!battlePet)
+                        return;
+
+                    if (m_spellInfo->Id == SPELL_SUMMON_BATTLE_PET_DEFAULT)
+                        entry = battlePet->JournalInfo.CreatureID;
+
                     summon = m_caster->GetMap()->SummonCreature(entry, *destTarget, properties, duration, m_originalCaster, m_spellInfo->Id);
                     if (!summon || !summon->HasUnitTypeMask(UNIT_MASK_MINION))
                         return;
 
+                    battlePetMgr->SetSummonedPet(summon);
+
+                    m_caster->SetGuidValue(PLAYER_FIELD_SUMMONED_BATTLE_PET_ID, battlePet->JournalInfo.Guid);
+                    m_caster->SetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL, battlePet->JournalInfo.Level);
+                    m_caster->SetUInt32Value(PLAYER_FIELD_CURRENT_BATTLE_PET_BREED_QUALITY, battlePet->JournalInfo.Quality);
+
                     summon->SelectLevel();       // some summoned creaters have different from 1 DB data for level/hp
+                    summon->SetGuidValue(UNIT_FIELD_BATTLE_PET_COMPANION_GUID, battlePet->JournalInfo.Guid);
+                    summon->SetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL, battlePet->JournalInfo.Level);
                     summon->SetUInt64Value(UNIT_NPC_FLAGS, summon->GetCreatureTemplate()->npcflag);
 
                     summon->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IMMUNE_TO_PC | UNIT_FLAG_IMMUNE_TO_NPC);
@@ -5940,7 +5964,14 @@ void Spell::EffectEnableBattlePets(SpellEffIndex /*effIndex*/)
         return;
 
     Player* plr = unitTarget->ToPlayer();
+
+    if (plr->HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_PET_BATTLES_UNLOCKED))
+        return;
+
     plr->SetFlag(PLAYER_FLAGS, PLAYER_FLAGS_PET_BATTLES_UNLOCKED);
+    plr->LearnSpell(SPELL_BATTLE_PET_TRAINING_PASSIVE, false);
+    plr->LearnSpell(SPELL_TRACK_PETS, false);
+    plr->LearnSpell(SPELL_REVIVE_BATTLE_PETS, false);
     plr->GetSession()->GetBattlePetMgr()->UnlockSlot(0);
 }
 
@@ -5972,6 +6003,13 @@ void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
     if (!battlePetMgr)
         return;
 
+    if (battlePetMgr->GetLearnedPets().size() >= MAX_BATTLE_PETS)
+    {
+        battlePetMgr->SendError(BATTLEPETRESULT_CANT_HAVE_MORE_PETS, creatureId); // or speciesEntry.CreatureID
+        SendCastResult(SPELL_FAILED_CANT_ADD_BATTLE_PET);
+        return;
+    }
+
     uint16 maxLearnedLevel = 0;
 
     for (auto pet : battlePetMgr->GetLearnedPets())
@@ -5999,6 +6037,36 @@ void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
     battlePetMgr->AddPet(speciesId, creatureId, breed, quality, level);
     plr->DestroyItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), true);
     m_CastItem = nullptr;
+}
+
+void Spell::EffectChangeBattlePetQuality(SpellEffIndex /*effIndex*/)
+{
+    /*
+    Basepoints:
+        Uncommon - 75
+        Rare - 85
+        Epic - 98
+    EffectMiscValueA:
+        Humanoid - 1
+        Dragonkin - 2
+        Flying - 4
+        Undead - 8
+        Critter - 16
+        Magic - 32
+        Elemental - 64
+        Beast - 128
+        Aquatic - 256
+        Mechanical - 512
+        All - 1023
+    */
+}
+
+void Spell::EffectGrantBattlePetLevel(SpellEffIndex /*effIndex*/)
+{
+    /*
+    Basepoints: levels
+    EffectMiscValueA: same as EffectChangeBattlePetQuality
+    */
 }
 
 void Spell::EffectUpgradeHeirloom(SpellEffIndex /*effIndex*/)

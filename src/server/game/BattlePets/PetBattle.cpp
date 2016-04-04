@@ -223,6 +223,29 @@ void PetBattle::EndBattle(uint8 winner, bool forfeit)
         _participants[1].player->SetRooted(false);*/
 }
 
+void PetBattle::Update(uint32 diff)
+{
+    // TODO: on battle start make players move and turn to proper positions
+
+    if (_roundTime <= 0)
+    {
+        // TODO: handle timeout
+        _roundTime = 30 * IN_MILLISECONDS;
+    }
+
+    if (_participants[0].roundCompleted && _participants[1].roundCompleted)
+    {
+        // TODO: handle round and battle endings
+        //       process spells - on round start
+        //       process spells and other moves
+        //       process spells - on round end
+        _roundTime = 30 * IN_MILLISECONDS;
+    }
+    else
+        _roundTime -= diff;
+}
+
+// TODO: get rid of this method, move it inside Update
 void PetBattle::RegisterMove(uint8 playerId)
 {
     _participants[playerId].roundCompleted = true;
@@ -271,7 +294,7 @@ void PetBattle::SwapPet(Player* player, uint8 frontPet)
     eff.CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar.Petx; // on first round, caster is the same as target
 
     if (_round && tar.Petx == _participants[playerId].playerUpdate.FrontPet) // pass round
-        eff.Flags = 1;
+        eff.Flags = 1; // this flag makes battle pet log not displaying "X is now your active pet"
 
     _participants[playerId].playerUpdate.FrontPet = tar.Petx; // not sure if we can store it here
     _roundResult.Effects.push_back(eff);
@@ -291,7 +314,14 @@ void PetBattle::ForfeitBattle(Player* player)
 
 void PetBattle::UseAbility(Player* player, uint32 ability)
 {
+    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
 
+    if (_participants[playerId].roundCompleted)
+        return;
+
+    // get front pets, compare speeds and PetBattleAbility ability(caster); for (effect : ability.effects) effecthandler(target);
+
+    RegisterMove(playerId);
 }
 
 void PetBattle::NotifyParticipants(const WorldPacket* packet)

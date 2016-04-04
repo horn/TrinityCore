@@ -18,7 +18,7 @@
 #ifndef PetBattle_h__
 #define PetBattle_h__
 
-#include "BattlePetPackets.h"
+#include "PetBattleAbility.h"
 
 enum PBOIDNames
 {
@@ -65,6 +65,7 @@ public:
 
     void StartBattle();
     void EndBattle(uint8 winner, bool forfeit);
+    void Update(uint32 diff);
     void RegisterMove(uint8 playerId);
     void SwapPet(Player* player, uint8 frontPet);
     void ForfeitBattle(Player* player);
@@ -83,6 +84,7 @@ private:
     uint8 _forfeitPenalty = 0;
 
     WorldPackets::BattlePet::RoundResult _roundResult;
+    uint32 _roundTime = 30 * IN_MILLISECONDS;
     uint8 _round = 0;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);
