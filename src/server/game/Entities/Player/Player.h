@@ -456,7 +456,7 @@ enum RuneCooldowns
     RUNE_MISS_COOLDOWN  = 1500     // cooldown applied on runes when the spell misses
 };
 
-enum RuneType
+enum RuneType : uint8
 {
     RUNE_BLOOD      = 0,
     RUNE_UNHOLY     = 1,
@@ -739,7 +739,7 @@ enum PlayerSlots
 
 #define INVENTORY_SLOT_BAG_0    255
 
-enum EquipmentSlots                                         // 19 slots
+enum EquipmentSlots : uint8                                 // 19 slots
 {
     EQUIPMENT_SLOT_START        = 0,
     EQUIPMENT_SLOT_HEAD         = 0,
@@ -767,13 +767,13 @@ enum EquipmentSlots                                         // 19 slots
 #define VISIBLE_ITEM_ENTRY_OFFSET 0
 #define VISIBLE_ITEM_ENCHANTMENT_OFFSET 1
 
-enum InventorySlots                                         // 4 slots
+enum InventorySlots : uint8                                 // 4 slots
 {
     INVENTORY_SLOT_BAG_START    = 19,
     INVENTORY_SLOT_BAG_END      = 23
 };
 
-enum InventoryPackSlots                                     // 16 slots
+enum InventoryPackSlots : uint8                             // 16 slots
 {
     INVENTORY_SLOT_ITEM_START   = 23,
     INVENTORY_SLOT_ITEM_END     = 39
@@ -915,7 +915,7 @@ enum TeleportToOptions
 };
 
 /// Type of environmental damages
-enum EnviromentalDamage
+enum EnviromentalDamage : uint8
 {
     DAMAGE_EXHAUSTED = 0,
     DAMAGE_DROWNING  = 1,
@@ -1001,14 +1001,27 @@ enum PlayerDelayedOperations
 // Maximum money amount : 2^31 - 1
 TC_GAME_API extern uint64 const MAX_MONEY_AMOUNT;
 
+enum BindExtensionState
+{
+    EXTEND_STATE_EXPIRED  =   0,
+    EXTEND_STATE_NORMAL   =   1,
+    EXTEND_STATE_EXTENDED =   2,
+    EXTEND_STATE_KEEP     = 255   // special state: keep current save type
+};
 struct InstancePlayerBind
 {
     InstanceSave* save;
-    bool perm;
     /* permanent PlayerInstanceBinds are created in Raid/Heroic instances for players
-       that aren't already permanently bound when they are inside when a boss is killed
-       or when they enter an instance that the group leader is permanently bound to. */
-    InstancePlayerBind() : save(nullptr), perm(false) { }
+    that aren't already permanently bound when they are inside when a boss is killed
+    or when they enter an instance that the group leader is permanently bound to. */
+    bool perm;
+    /* extend state listing:
+    EXPIRED  - doesn't affect anything unless manually re-extended by player
+    NORMAL   - standard state
+    EXTENDED - won't be promoted to EXPIRED at next reset period, will instead be promoted to NORMAL */
+    BindExtensionState extendState;
+
+    InstancePlayerBind() : save(NULL), perm(false), extendState(EXTEND_STATE_NORMAL) { }
 };
 
 struct AccessRequirement
@@ -1050,7 +1063,7 @@ enum ReferAFriendError
     ERR_REFER_A_FRIEND_MAP_INCOMING_TRANSFER_NOT_ALLOWED = 15
 };
 
-enum PlayerRestState
+enum PlayerRestState : uint8
 {
     REST_STATE_RESTED                                = 0x01,
     REST_STATE_NOT_RAF_LINKED                        = 0x02,
@@ -1067,7 +1080,7 @@ enum PlayerCommandStates
     CHEAT_WATERWALK = 0x10
 };
 
-enum PlayerLogXPReason
+enum PlayerLogXPReason : uint8
 {
     LOG_XP_REASON_KILL    = 0,
     LOG_XP_REASON_NO_KILL = 1
@@ -1658,7 +1671,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetTarget(ObjectGuid const& /*guid*/) override { } /// Used for serverside target changes, does not apply to players
         void SetSelection(ObjectGuid const& guid) { SetGuidValue(UNIT_FIELD_TARGET, guid); }
 
-        uint8 GetComboPoints() const { return GetPower(POWER_COMBO_POINTS); }
+        uint32 GetComboPoints() const { return uint32(GetPower(POWER_COMBO_POINTS)); }
         void AddComboPoints(int8 count, Spell* spell = nullptr);
         void GainSpellComboPoints(int8 count);
         void ClearComboPoints();
@@ -2329,13 +2342,13 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool m_InstanceValid;
         // permanent binds and solo binds by difficulty
         BoundInstancesMap m_boundInstances[MAX_DIFFICULTY];
-        InstancePlayerBind* GetBoundInstance(uint32 mapid, Difficulty difficulty);
+        InstancePlayerBind* GetBoundInstance(uint32 mapid, Difficulty difficulty, bool withExpired = false);
         InstancePlayerBind const* GetBoundInstance(uint32 mapid, Difficulty difficulty) const;
         BoundInstancesMap& GetBoundInstances(Difficulty difficulty) { return m_boundInstances[difficulty]; }
         InstanceSave* GetInstanceSave(uint32 mapid);
         void UnbindInstance(uint32 mapid, Difficulty difficulty, bool unload = false);
         void UnbindInstance(BoundInstancesMap::iterator &itr, Difficulty difficulty, bool unload = false);
-        InstancePlayerBind* BindToInstance(InstanceSave* save, bool permanent, bool load = false);
+        InstancePlayerBind* BindToInstance(InstanceSave* save, bool permanent, BindExtensionState extendState = EXTEND_STATE_NORMAL, bool load = false);
         void BindToInstance();
         void SetPendingBind(uint32 instanceId, uint32 bindTimer);
         bool HasPendingBind() const { return _pendingBindId > 0; }

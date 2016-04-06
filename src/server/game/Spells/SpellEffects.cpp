@@ -924,7 +924,7 @@ void Spell::EffectJump(SpellEffIndex /*effIndex*/)
 
     float speedXY, speedZ;
     CalculateJumpSpeeds(effectInfo, m_caster->GetExactDist2d(x, y), speedXY, speedZ);
-    m_caster->GetMotionMaster()->MoveJump(x, y, z, speedXY, speedZ, EVENT_JUMP, effectInfo->TriggerSpell, unitTarget->GetGUID());
+    m_caster->GetMotionMaster()->MoveJump(x, y, z, 0.0f, speedXY, speedZ, EVENT_JUMP, false, effectInfo->TriggerSpell, unitTarget->GetGUID());
 }
 
 void Spell::EffectJumpDest(SpellEffIndex /*effIndex*/)
@@ -938,13 +938,9 @@ void Spell::EffectJumpDest(SpellEffIndex /*effIndex*/)
     if (!m_targets.HasDst())
         return;
 
-    // Init dest coordinates
-    float x, y, z;
-    destTarget->GetPosition(x, y, z);
-
     float speedXY, speedZ;
-    CalculateJumpSpeeds(effectInfo, m_caster->GetExactDist2d(x, y), speedXY, speedZ);
-    m_caster->GetMotionMaster()->MoveJump(x, y, z, speedXY, speedZ, EVENT_JUMP, effectInfo->TriggerSpell);
+    CalculateJumpSpeeds(effectInfo, m_caster->GetExactDist2d(destTarget), speedXY, speedZ);
+    m_caster->GetMotionMaster()->MoveJump(*destTarget, speedXY, speedZ, EVENT_JUMP, true, effectInfo->TriggerSpell);
 }
 
 void Spell::CalculateJumpSpeeds(SpellEffectInfo const* effInfo, float dist, float& speedXY, float& speedZ)
@@ -1999,8 +1995,7 @@ void Spell::EffectSummonChangeItem(SpellEffIndex /*effIndex*/)
     else if (player->IsBankPos(pos))
     {
         ItemPosCountVec dest;
-        uint8 msg = player->CanBankItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), dest, pNewItem, true);
-        if (msg == EQUIP_ERR_OK)
+        if (player->CanBankItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), dest, pNewItem, true) == EQUIP_ERR_OK)
         {
             player->DestroyItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), true);
 
@@ -2023,7 +2018,7 @@ void Spell::EffectSummonChangeItem(SpellEffIndex /*effIndex*/)
 
         player->DestroyItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), true);
 
-        uint8 msg = player->CanEquipItem(m_CastItem->GetSlot(), dest, pNewItem, true);
+        InventoryResult msg = player->CanEquipItem(m_CastItem->GetSlot(), dest, pNewItem, true);
 
         if (msg == EQUIP_ERR_OK || msg == EQUIP_ERR_CLIENT_LOCKED_OUT)
         {
@@ -4695,7 +4690,7 @@ void Spell::EffectPullTowards(SpellEffIndex /*effIndex*/)
     float speedXY = float(effectInfo->MiscValue) * 0.1f;
     float speedZ = unitTarget->GetDistance(pos) / speedXY * 0.5f * Movement::gravity;
 
-    unitTarget->GetMotionMaster()->MoveJump(pos.GetPositionX(), pos.GetPositionY(), pos.GetPositionZ(), speedXY, speedZ);
+    unitTarget->GetMotionMaster()->MoveJump(pos, speedXY, speedZ);
 }
 
 void Spell::EffectChangeRaidMarker(SpellEffIndex /*effIndex*/)
