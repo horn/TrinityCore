@@ -127,16 +127,17 @@ enum PetBattleEffectType
     PETBATTLE_EFFECT_TYPE_INVALID               = 15  // not sure about the value
 };
 
+// 6.2.4
 enum PetBattleEffectTargetEx
 {
     PET_BATTLE_EFFECT_TARGET_EX_NONE            = 0,
-    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE       = 1,
-    PET_BATTLE_EFFECT_TARGET_EX_AURA            = 2,
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE     = 3,
-    PET_BATTLE_EFFECT_TARGET_EX_PET             = 4, // ?
-    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE  = 5,
-    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY = 6,
-    PET_BATTLE_EFFECT_TARGET_EX_STATE           = 7
+    PET_BATTLE_EFFECT_TARGET_EX_AURA            = 1,
+    PET_BATTLE_EFFECT_TARGET_EX_STATE           = 2,
+    PET_BATTLE_EFFECT_TARGET_EX_PET             = 3, // ?
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE     = 4,
+    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY = 5,
+    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE  = 6,
+    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE       = 7
 };
 
 PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
@@ -161,20 +162,24 @@ PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
 class PetBattleAbility
 {
 public:
-    PetBattleAbility(WorldPackets::BattlePet::PetBattlePetUpdateInfo caster) : _caster(caster) { }
+    PetBattleAbility(WorldPackets::BattlePet::PetBattlePetUpdateInfo* caster) : _caster(caster) { }
 
-    void EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
-    void EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
-    void EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo);
+    WorldPackets::BattlePet::PetBattlePetUpdateInfo* GetCaster() { return _caster; }
+
+    void EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
+    void EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
+    void EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
 
 private:
-    WorldPackets::BattlePet::PetBattlePetUpdateInfo _caster;
+    WorldPackets::BattlePet::PetBattlePetUpdateInfo* _caster = nullptr;
+    uint8 _round = 0;
 
     struct EffectInfo
     {
         PetBattleEffectType type;
         PetBattleEffectTarget implicitTarget;
-        void(PetBattleAbility::*function)(WorldPackets::BattlePet::PetBattlePetUpdateInfo effectTarget);
+        // TODO: this will need access to more stuff (effectID, properties...)
+        void(PetBattleAbility::*function)(WorldPackets::BattlePet::PetBattlePetUpdateInfo*);
     };
     static std::unordered_map<PetBattleAbilityEffectName, EffectInfo> _effectsInfo;
 };

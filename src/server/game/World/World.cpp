@@ -28,7 +28,7 @@
 #include "BattlefieldMgr.h"
 #include "BattlegroundMgr.h"
 #include "BattlenetRpcErrorCodes.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 #include "CalendarMgr.h"
 #include "Channel.h"
 #include "CharacterDatabaseCleaner.h"
@@ -54,6 +54,7 @@
 #include "MMapFactory.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
+#include "PetBattleMgr.h"
 #include "Player.h"
 #include "PoolMgr.h"
 #include "GitRevision.h"
@@ -2058,7 +2059,7 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadRealmNames();
 
     TC_LOG_INFO("server.loading", "Loading battle pets info...");
-    BattlePetMgr::Initialize();
+    BattlePetJournal::Initialize();
 
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
@@ -2287,6 +2288,9 @@ void World::Update(uint32 diff)
         m_timers[WUPDATE_DELETECHARS].Reset();
         Player::DeleteOldCharacters();
     }
+
+    sPetBattleMgr.Update(diff);
+    RecordTimeDiff("PetBattleMgr");
 
     sLFGMgr->Update(diff);
     RecordTimeDiff("UpdateLFGMgr");

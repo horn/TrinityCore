@@ -47,7 +47,7 @@ namespace WorldPackets
 
         struct BattlePetSlot
         {
-            BattlePetJournalInfo Pet;
+            BattlePetJournalInfo* Pet = nullptr;
             uint32 CollarID = 0; // what's this?
             uint8 Index = 0;
             bool Locked = true;
@@ -70,6 +70,14 @@ namespace WorldPackets
         {
         public:
             BattlePetJournalLockAcquired() : ServerPacket(SMSG_BATTLE_PET_JOURNAL_LOCK_ACQUIRED, 0) { }
+
+            WorldPacket const* Write() override { return &_worldPacket; }
+        };
+
+        class BattlePetJournalLockDenied final : public ServerPacket
+        {
+        public:
+            BattlePetJournalLockDenied() : ServerPacket(SMSG_BATTLE_PET_JOURNAL_LOCK_DENIED, 0) { }
 
             WorldPacket const* Write() override { return &_worldPacket; }
         };
@@ -284,7 +292,7 @@ namespace WorldPackets
 
         struct PetBattlePetUpdateInfo
         {
-            BattlePetJournalInfo* JournalInfo;
+            BattlePetJournalInfo* JournalInfo = nullptr;
             uint32 NpcTeamMemberId = 0;
             uint16 StatusFlags = 0;
             uint8 Slot = 0;

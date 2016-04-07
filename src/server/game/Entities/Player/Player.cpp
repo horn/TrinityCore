@@ -27,7 +27,7 @@
 #include "Battleground.h"
 #include "BattlegroundMgr.h"
 #include "BattlegroundScore.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 #include "CellImpl.h"
 #include "ChannelMgr.h"
 #include "CharacterDatabaseCleaner.h"
@@ -18876,7 +18876,7 @@ void Player::SaveToDB(bool create /*=false*/)
     // TODO: Move this out
     trans = LoginDatabase.BeginTransaction();
     GetSession()->GetCollectionMgr()->SaveAccountToys(trans);
-    GetSession()->GetBattlePetMgr()->SaveToDB(trans);
+    GetSession()->GetBattlePetJournal()->SaveToDB(trans);
     GetSession()->GetCollectionMgr()->SaveAccountHeirlooms(trans);
 
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_BNET_LAST_PLAYER_CHARACTERS);

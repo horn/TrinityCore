@@ -66,10 +66,12 @@ public:
     void StartBattle();
     void EndBattle(uint8 winner, bool forfeit);
     void Update(uint32 diff);
-    void RegisterMove(uint8 playerId);
+    void EndRound();
     void SwapPet(Player* player, uint8 frontPet);
     void ForfeitBattle(Player* player);
     void UseAbility(Player* player, uint32 ability);
+
+    WorldPackets::BattlePet::PetBattlePetUpdateInfo* GetPetBattleObject(PBOIDNames pboid) { return &_objects[pboid]; }
 
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
     uint8 GetForfeitPenalty() const { return _forfeitPenalty; }
@@ -78,13 +80,15 @@ public:
 
 private:
     Participant _participants[2];
+    // PetBattleUpdateInfo::States should be enough to hold all info during the battle.
+    // If not, replace PetBattleUpdateInfo::JournalInfo with variables and/or make a wrapper struct.
+    WorldPackets::BattlePet::PetBattlePetUpdateInfo _objects[PBOID_INVALID];
 
     WorldPackets::BattlePet::LocationInfo _locationInfo;
     bool _isPvP = false;
     uint8 _forfeitPenalty = 0;
 
     WorldPackets::BattlePet::RoundResult _roundResult;
-    uint32 _roundTime = 30 * IN_MILLISECONDS;
     uint8 _round = 0;
 
     WorldPackets::BattlePet::PlayerUpdate GetPlayerUpdateInfo(Player* player, uint8& PBOID);

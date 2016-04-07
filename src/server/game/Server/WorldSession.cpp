@@ -48,7 +48,7 @@
 #include "ClientConfigPackets.h"
 #include "MiscPackets.h"
 #include "ChatPackets.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 #include "PacketUtilities.h"
 #include "CollectionMgr.h"
 
@@ -135,7 +135,7 @@ WorldSession::WorldSession(uint32 id, std::string&& name, uint32 battlenetAccoun
     expireTime(60000), // 1 min after socket loss, session is deleted
     forceExit(false),
     m_currentBankerGUID(),
-    _battlePetMgr(Trinity::make_unique<BattlePetMgr>(this)),
+    _battlePetJournal(Trinity::make_unique<BattlePetJournal>(this)),
     _collectionMgr(Trinity::make_unique<CollectionMgr>(this))
 {
     memset(_tutorials, 0, sizeof(_tutorials));
@@ -1244,7 +1244,7 @@ void WorldSession::InitializeSessionCallback(SQLQueryHolder* realmHolder, SQLQue
     bnetConnected.State = 1;
     SendPacket(bnetConnected.Write());
 
-    _battlePetMgr->LoadFromDB(holder->GetPreparedResult(AccountInfoQueryHolder::BATTLE_PETS),
+    _battlePetJournal->LoadFromDB(holder->GetPreparedResult(AccountInfoQueryHolder::BATTLE_PETS),
                               holder->GetPreparedResult(AccountInfoQueryHolder::BATTLE_PET_SLOTS));
 
     delete realmHolder;

@@ -17,15 +17,34 @@
 
 #include "PetBattleMgr.h"
 
+// TODO: move parts of PetBattle class here
+//       make use of ObjectGuid<HighGuid::PetBattle> here probably
+//       implement matchmaking (Find Battle)
+
 PetBattleMgr& PetBattleMgr::Instance()
 {
     static PetBattleMgr instance;
     return instance;
 }
 
-// not sure if should be called from World::Update() or Player::Update()
 void PetBattleMgr::Update(uint32 diff)
 {
     for (auto battle : _battles)
         battle->Update(diff);
+}
+
+PetBattle* PetBattleMgr::CreatePetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo)
+{
+    PetBattle* battle = new PetBattle(player, target, locationInfo);
+    if (!battle)
+        return nullptr;
+
+    _battles.push_back(battle);
+    return battle;
+}
+
+void PetBattleMgr::DestroyPetBattle(PetBattle* battle)
+{
+    _battles.remove(battle);
+    delete battle;
 }

@@ -15,11 +15,10 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BattlePetMgr_h__
-#define BattlePetMgr_h__
+#ifndef BattlePetJournal_h__
+#define BattlePetJournal_h__
 
 #include "BattlePetPackets.h"
-#include "PetBattle.h"
 #include "DatabaseEnv.h"
 
 enum BattlePetMisc
@@ -45,14 +44,21 @@ enum BattlePetDBFlags
     BATTLE_PET_DB_FLAG_SPELL_3_ROW_2    = 0x40
 };
 
-// TODO: fix undefined values in this enum
+// 6.2.4
+enum FlagsControlType
+{
+    FLAGS_CONTROL_TYPE_APPLY            = 1,
+    FLAGS_CONTROL_TYPE_REMOVE           = 2
+};
+
+// 6.2.4
 enum BattlePetError
 {
-    BATTLEPETRESULT_CANT_HAVE_MORE_PETS_OF_THAT_TYPE = 7,
-    BATTLEPETRESULT_TOO_HIGH_LEVEL_TO_UNCAGE         = 10,
-    BATTLEPETRESULT_CANT_HAVE_MORE_PETS              = 15,
+    BATTLEPETRESULT_CANT_HAVE_MORE_PETS_OF_THAT_TYPE = 3,
+    BATTLEPETRESULT_CANT_HAVE_MORE_PETS              = 4,
+    BATTLEPETRESULT_TOO_HIGH_LEVEL_TO_UNCAGE         = 7,
 
-    // wrong order
+    // TODO: find correct values if possible and needed (also wrong order)
     BATTLEPETRESULT_DUPLICATE_CONVERTED_PET,
     BATTLEPETRESULT_NEED_TO_UNLOCK,
     BATTLEPETRESULT_BAD_PARAM,
@@ -138,7 +144,9 @@ BattlePetState const FamilyStates[BATTLE_PET_FAMILY_MAX] =
     STATE_PASSIVE_MECHANICAL
 };
 
-class BattlePetMgr
+class PetBattle;
+
+class BattlePetJournal
 {
 public:
     struct BattlePet
@@ -150,11 +158,10 @@ public:
         std::vector<uint32 /*abilityId*/> GetActiveAbilities();
 
         WorldPackets::BattlePet::BattlePetJournalInfo JournalInfo;
-        WorldPackets::BattlePet::PetBattlePetUpdateInfo UpdateInfo; // contains JournalInfo too - maybe redunant
         BattlePetSaveInfo SaveInfo;
     };
 
-    explicit BattlePetMgr(WorldSession* owner);
+    explicit BattlePetJournal(WorldSession* owner);
 
     static void Initialize();
 
@@ -189,10 +196,12 @@ public:
 
     void SendUpdates(std::vector<BattlePet> pets, bool petAdded);
     void SendError(BattlePetError error, uint32 creatureId);
+    void SendJournalLock(bool acquired);
 
     // Pet Battles
     PetBattle* GetPetBattle() const { return _battle; }
     void SetPetBattle(PetBattle* battle) { _battle = battle; }
+    bool IsInBattle() const { return !_battle; }
 
 private:
     WorldSession* _owner;
@@ -214,4 +223,4 @@ private:
     static std::unordered_map<uint32 /*SpeciesID*/, std::array<std::array<uint32, 3>, 2> /*abilities*/> _abilitiesPerSpecies;
 };
 
-#endif // BattlePetMgr_h__
+#endif // BattlePetJournal_h__

@@ -259,6 +259,7 @@ class TC_GAME_API ObjectGuid
         bool IsGuild()             const { return GetHigh() == HighGuid::Guild; }
         bool IsSceneObject()       const { return GetHigh() == HighGuid::SceneObject; }
         bool IsConversation()      const { return GetHigh() == HighGuid::Conversation; }
+        bool IsBattlePet()         const { return GetHigh() == HighGuid::BattlePet; }
 
         static TypeID GetTypeId(HighGuid high)
         {

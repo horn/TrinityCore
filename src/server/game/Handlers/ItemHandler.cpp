@@ -27,7 +27,7 @@
 #include "DB2Stores.h"
 #include "NPCPackets.h"
 #include "ItemPackets.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 
 void WorldSession::HandleSplitItemOpcode(WorldPackets::Item::SplitItem& splitItem)
 {
@@ -1285,6 +1285,6 @@ void WorldSession::HandleUseCritterItem(WorldPackets::Item::UseCritterItem& useC
     if (!battlePetSpecies)
         return;
 
-    GetBattlePetMgr()->AddPet(battlePetSpecies->ID, battlePetSpecies->CreatureID, BattlePetMgr::RollPetBreed(battlePetSpecies->ID), BattlePetMgr::GetDefaultPetQuality(battlePetSpecies->ID));
+    GetBattlePetJournal()->AddPet(battlePetSpecies->ID, battlePetSpecies->CreatureID, BattlePetJournal::RollPetBreed(battlePetSpecies->ID), BattlePetJournal::GetDefaultPetQuality(battlePetSpecies->ID));
     _player->DestroyItem(item->GetBagSlot(), item->GetSlot(), true);
 }

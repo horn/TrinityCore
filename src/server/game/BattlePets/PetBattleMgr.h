@@ -27,6 +27,9 @@ public:
 
     void Update(uint32 diff);
 
+    PetBattle* CreatePetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
+    void DestroyPetBattle(PetBattle* battle);
+
 private:
     std::list<PetBattle*> _battles;
 };

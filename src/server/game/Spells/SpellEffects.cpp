@@ -56,7 +56,7 @@
 #include "Guild.h"
 #include "ReputationMgr.h"
 #include "AreaTrigger.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 #include "Garrison.h"
 #include "CombatLogPackets.h"
 #include "DuelPackets.h"
@@ -2169,11 +2169,11 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     if (!caster)
                         return;
 
-                    BattlePetMgr* battlePetMgr = caster->GetSession()->GetBattlePetMgr();
-                    if (!battlePetMgr)
+                    BattlePetJournal* battlePetJournal = caster->GetSession()->GetBattlePetJournal();
+                    if (!battlePetJournal)
                         return;
 
-                    BattlePetMgr::BattlePet* battlePet = battlePetMgr->GetPet(battlePetMgr->GetSummonedPetGuid());
+                    BattlePetJournal::BattlePet* battlePet = battlePetJournal->GetPet(battlePetJournal->GetSummonedPetGuid());
                     if (!battlePet)
                         return;
 
@@ -2184,13 +2184,15 @@ void Spell::EffectSummonType(SpellEffIndex effIndex)
                     if (!summon || !summon->HasUnitTypeMask(UNIT_MASK_MINION))
                         return;
 
-                    battlePetMgr->SetSummonedPet(summon);
+                    battlePetJournal->SetSummonedPet(summon);
 
                     m_caster->SetGuidValue(PLAYER_FIELD_SUMMONED_BATTLE_PET_ID, battlePet->JournalInfo.Guid);
                     m_caster->SetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL, battlePet->JournalInfo.Level);
                     m_caster->SetUInt32Value(PLAYER_FIELD_CURRENT_BATTLE_PET_BREED_QUALITY, battlePet->JournalInfo.Quality);
 
-                    summon->SelectLevel();       // some summoned creaters have different from 1 DB data for level/hp
+                    //summon->SelectLevel();       // some summoned creaters have different from 1 DB data for level/hp
+                    summon->SetMaxHealth(battlePet->JournalInfo.MaxHealth);
+                    summon->SetHealth(battlePet->JournalInfo.Health);
                     summon->SetGuidValue(UNIT_FIELD_BATTLE_PET_COMPANION_GUID, battlePet->JournalInfo.Guid);
                     summon->SetUInt32Value(UNIT_FIELD_WILD_BATTLEPET_LEVEL, battlePet->JournalInfo.Level);
                     summon->SetUInt64Value(UNIT_NPC_FLAGS, summon->GetCreatureTemplate()->npcflag);
@@ -2291,13 +2293,13 @@ void Spell::EffectLearnSpell(SpellEffIndex effIndex)
 
     if (m_spellInfo->Id == 55884)
     {
-        if (BattlePetMgr* battlePetMgr = player->GetSession()->GetBattlePetMgr())
+        if (BattlePetJournal* battlePetJournal = player->GetSession()->GetBattlePetJournal())
         {
             for (auto entry : sBattlePetSpeciesStore)
             {
                 if (entry->SummonSpellID == spellToLearn)
                 {
-                    battlePetMgr->AddPet(entry->ID, entry->CreatureID, BattlePetMgr::RollPetBreed(entry->ID), BattlePetMgr::GetDefaultPetQuality(entry->ID));
+                    battlePetJournal->AddPet(entry->ID, entry->CreatureID, BattlePetJournal::RollPetBreed(entry->ID), BattlePetJournal::GetDefaultPetQuality(entry->ID));
                     player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_BATTLE_PET_COUNT);
                     break;
                 }
@@ -5946,8 +5948,8 @@ void Spell::EffectHealBattlePetPct(SpellEffIndex effIndex)
     if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    if (BattlePetMgr* battlePetMgr = unitTarget->ToPlayer()->GetSession()->GetBattlePetMgr())
-        battlePetMgr->HealBattlePetsPct(GetEffect(effIndex)->BasePoints);
+    if (BattlePetJournal* battlePetJournal = unitTarget->ToPlayer()->GetSession()->GetBattlePetJournal())
+        battlePetJournal->HealBattlePetsPct(GetEffect(effIndex)->BasePoints);
 }
 
 void Spell::EffectEnableBattlePets(SpellEffIndex /*effIndex*/)
@@ -5967,7 +5969,7 @@ void Spell::EffectEnableBattlePets(SpellEffIndex /*effIndex*/)
     plr->LearnSpell(SPELL_BATTLE_PET_TRAINING_PASSIVE, false);
     plr->LearnSpell(SPELL_TRACK_PETS, false);
     plr->LearnSpell(SPELL_REVIVE_BATTLE_PETS, false);
-    plr->GetSession()->GetBattlePetMgr()->UnlockSlot(0);
+    plr->GetSession()->GetBattlePetJournal()->UnlockSlot(0);
 }
 
 void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
@@ -5994,34 +5996,34 @@ void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
     if (!speciesEntry)
         return;
 
-    BattlePetMgr* battlePetMgr = plr->GetSession()->GetBattlePetMgr();
-    if (!battlePetMgr)
+    BattlePetJournal* battlePetJournal = plr->GetSession()->GetBattlePetJournal();
+    if (!battlePetJournal)
         return;
 
-    if (battlePetMgr->GetLearnedPets().size() >= MAX_BATTLE_PETS)
+    if (battlePetJournal->GetLearnedPets().size() >= MAX_BATTLE_PETS)
     {
-        battlePetMgr->SendError(BATTLEPETRESULT_CANT_HAVE_MORE_PETS, creatureId); // or speciesEntry.CreatureID
+        battlePetJournal->SendError(BATTLEPETRESULT_CANT_HAVE_MORE_PETS, creatureId); // or speciesEntry.CreatureID
         SendCastResult(SPELL_FAILED_CANT_ADD_BATTLE_PET);
         return;
     }
 
     uint16 maxLearnedLevel = 0;
 
-    for (auto pet : battlePetMgr->GetLearnedPets())
+    for (auto pet : battlePetJournal->GetLearnedPets())
         maxLearnedLevel = std::max(pet.JournalInfo.Level, maxLearnedLevel);
 
     // TODO: This means if you put your highest lvl pet into cage, you won't be able to uncage it again which is probably wrong.
     // We will need to store maxLearnedLevel somewhere to avoid this behaviour.
     if (maxLearnedLevel < level)
     {
-        battlePetMgr->SendError(BATTLEPETRESULT_TOO_HIGH_LEVEL_TO_UNCAGE, creatureId); // or speciesEntry.CreatureID
+        battlePetJournal->SendError(BATTLEPETRESULT_TOO_HIGH_LEVEL_TO_UNCAGE, creatureId); // or speciesEntry.CreatureID
         SendCastResult(SPELL_FAILED_CANT_ADD_BATTLE_PET);
         return;
     }
 
-    if (battlePetMgr->GetPetCount(speciesId) >= MAX_BATTLE_PETS_PER_SPECIES)
+    if (battlePetJournal->GetPetCount(speciesId) >= MAX_BATTLE_PETS_PER_SPECIES)
     {
-        battlePetMgr->SendError(BATTLEPETRESULT_CANT_HAVE_MORE_PETS_OF_THAT_TYPE, creatureId); // or speciesEntry.CreatureID
+        battlePetJournal->SendError(BATTLEPETRESULT_CANT_HAVE_MORE_PETS_OF_THAT_TYPE, creatureId); // or speciesEntry.CreatureID
         SendCastResult(SPELL_FAILED_CANT_ADD_BATTLE_PET);
         return;
     }
@@ -6029,7 +6031,7 @@ void Spell::EffectUncageBattlePet(SpellEffIndex /*effIndex*/)
     if (!plr->HasSpell(speciesEntry->SummonSpellID))
         plr->LearnSpell(speciesEntry->SummonSpellID, false);
 
-    battlePetMgr->AddPet(speciesId, creatureId, breed, quality, level);
+    battlePetJournal->AddPet(speciesId, creatureId, breed, quality, level);
     plr->DestroyItem(m_CastItem->GetBagSlot(), m_CastItem->GetSlot(), true);
     m_CastItem = nullptr;
 }

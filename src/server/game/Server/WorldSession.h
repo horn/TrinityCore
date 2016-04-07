@@ -33,7 +33,7 @@
 #include "AccountMgr.h"
 #include <unordered_set>
 
-class BattlePetMgr;
+class BattlePetJournal;
 class Channel;
 class CollectionMgr;
 class Creature;
@@ -1093,7 +1093,7 @@ class TC_GAME_API WorldSession
         bool IsARecruiter() const { return isRecruiter; }
 
         // Battle Pets
-        BattlePetMgr* GetBattlePetMgr() const { return _battlePetMgr.get(); }
+        BattlePetJournal* GetBattlePetJournal() const { return _battlePetJournal.get(); }
 
         CollectionMgr* GetCollectionMgr() const { return _collectionMgr.get(); }
 
@@ -1854,7 +1854,7 @@ class TC_GAME_API WorldSession
         bool forceExit;
         ObjectGuid m_currentBankerGUID;
 
-        std::unique_ptr<BattlePetMgr> _battlePetMgr;
+        std::unique_ptr<BattlePetJournal> _battlePetJournal;
 
         std::unique_ptr<CollectionMgr> _collectionMgr;
 

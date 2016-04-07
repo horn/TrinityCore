@@ -16,8 +16,9 @@
  */
 
 #include "WorldSession.h"
-#include "BattlePetMgr.h"
+#include "BattlePetJournal.h"
 #include "BattlePetPackets.h"
+#include "PetBattleMgr.h"
 #include "Player.h"
 #include "ObjectMgr.h"
 
@@ -25,35 +26,37 @@ void WorldSession::HandleBattlePetRequestJournal(WorldPackets::BattlePet::Battle
 {
     // TODO: Move this to BattlePetMgr::SendJournal() just to have all packets in one file
     WorldPackets::BattlePet::BattlePetJournal battlePetJournal;
-    battlePetJournal.Trap = GetBattlePetMgr()->GetTrapLevel();
+    battlePetJournal.Trap = GetBattlePetJournal()->GetTrapLevel();
 
-    for (auto itr : GetBattlePetMgr()->GetLearnedPets())
+    for (auto itr : GetBattlePetJournal()->GetLearnedPets())
         battlePetJournal.Pets.push_back(itr.JournalInfo);
 
-    battlePetJournal.Slots = GetBattlePetMgr()->GetSlots();
+    battlePetJournal.Slots = GetBattlePetJournal()->GetSlots();
     SendPacket(battlePetJournal.Write());
 }
 
 void WorldSession::HandleBattlePetSetBattleSlot(WorldPackets::BattlePet::BattlePetSetBattleSlot& battlePetSetBattleSlot)
 {
-    WorldPackets::BattlePet::BattlePetSlot* targetSlot = GetBattlePetMgr()->GetSlot(battlePetSetBattleSlot.Slot);
-    if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetSetBattleSlot.PetGuid))
+    WorldPackets::BattlePet::BattlePetSlot* targetSlot = GetBattlePetJournal()->GetSlot(battlePetSetBattleSlot.Slot);
+    if (BattlePetJournal::BattlePet* pet = GetBattlePetJournal()->GetPet(battlePetSetBattleSlot.PetGuid))
     {
-        if (!targetSlot->Pet.Guid.IsEmpty())
-            for (auto& slot : GetBattlePetMgr()->GetSlots())
-                if (slot.Pet.Guid == battlePetSetBattleSlot.PetGuid)
+        if (targetSlot->Pet)
+            for (auto& slot : GetBattlePetJournal()->GetSlots())
+                if (slot.Pet && slot.Pet->Guid == battlePetSetBattleSlot.PetGuid)
                 {
-                    GetBattlePetMgr()->GetSlot(slot.Index)->Pet = targetSlot->Pet;
+                    GetBattlePetJournal()->GetSlot(slot.Index)->Pet = targetSlot->Pet;
                     break;
                 }
 
-        targetSlot->Pet = pet->JournalInfo;
+        targetSlot->Pet = &pet->JournalInfo;
     }
+    else if (battlePetSetBattleSlot.PetGuid.IsEmpty()) // we can set a slot to be empty using macro
+        targetSlot->Pet = nullptr;
 }
 
 void WorldSession::HandleBattlePetModifyName(WorldPackets::BattlePet::BattlePetModifyName& battlePetModifyName)
 {
-    if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetModifyName.PetGuid))
+    if (BattlePetJournal::BattlePet* pet = GetBattlePetJournal()->GetPet(battlePetModifyName.PetGuid))
     {
         pet->JournalInfo.Name = battlePetModifyName.Name;
 
@@ -64,16 +67,16 @@ void WorldSession::HandleBattlePetModifyName(WorldPackets::BattlePet::BattlePetM
 
 void WorldSession::HandleBattlePetDeletePet(WorldPackets::BattlePet::BattlePetDeletePet& battlePetDeletePet)
 {
-    GetBattlePetMgr()->RemovePet(battlePetDeletePet.PetGuid);
+    GetBattlePetJournal()->RemovePet(battlePetDeletePet.PetGuid);
 }
 
 void WorldSession::HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSetFlags& battlePetSetFlags)
 {
-    if (BattlePetMgr::BattlePet* pet = GetBattlePetMgr()->GetPet(battlePetSetFlags.PetGuid))
+    if (BattlePetJournal::BattlePet* pet = GetBattlePetJournal()->GetPet(battlePetSetFlags.PetGuid))
     {
-        if (battlePetSetFlags.ControlType == 2) // 2 - apply
+        if (battlePetSetFlags.ControlType == FLAGS_CONTROL_TYPE_APPLY)
             pet->JournalInfo.Flags |= battlePetSetFlags.Flags;
-        else                                    // 3 - remove
+        else // FLAGS_CONTROL_TYPE_REMOVE
             pet->JournalInfo.Flags &= ~battlePetSetFlags.Flags;
 
         if (pet->SaveInfo != BATTLE_PET_NEW)
@@ -83,24 +86,26 @@ void WorldSession::HandleBattlePetSetFlags(WorldPackets::BattlePet::BattlePetSet
 
 void WorldSession::HandleCageBattlePet(WorldPackets::BattlePet::CageBattlePet& cageBattlePet)
 {
-    GetBattlePetMgr()->CageBattlePet(cageBattlePet.PetGuid);
+    GetBattlePetJournal()->CageBattlePet(cageBattlePet.PetGuid);
 }
 
 void WorldSession::HandleBattlePetSummon(WorldPackets::BattlePet::BattlePetSummon& battlePetSummon)
 {
-    GetBattlePetMgr()->SummonPet(battlePetSummon.PetGuid);
+    GetBattlePetJournal()->SummonPet(battlePetSummon.PetGuid);
 }
 
 void WorldSession::HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleRequestPvp& petBattleRequestPvp)
 {
-    if (GetBattlePetMgr()->GetPetBattle())
+    if (GetBattlePetJournal()->GetPetBattle())
         return;
 
     Player* target = ObjectAccessor::FindPlayer(petBattleRequestPvp.TargetGuid);
-    if (!target || target->GetSession()->GetBattlePetMgr()->GetPetBattle()) // add "have battle pets unlocked" check
+    if (!target || target->GetSession()->GetBattlePetJournal()->GetPetBattle()) // add "have battle pets unlocked" check
         return;
 
-    PetBattle* battle = new PetBattle(_player, petBattleRequestPvp.TargetGuid, petBattleRequestPvp.LocationInfo);
+    PetBattle* battle = sPetBattleMgr.CreatePetBattle(_player, petBattleRequestPvp.TargetGuid, petBattleRequestPvp.LocationInfo);
+    if (!battle)
+        return;
 
     WorldPackets::BattlePet::PetBattlePvpChallenge petBattlePvpChallenge;
     petBattlePvpChallenge.ChallengerGuid = _player->GetGUID();
@@ -111,13 +116,13 @@ void WorldSession::HandlePetBattleRequestPvp(WorldPackets::BattlePet::PetBattleR
 
 void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBattleRequestUpdate& petBattleRequestUpdate)
 {
-    PetBattle* battle = GetBattlePetMgr()->GetPetBattle();
+    PetBattle* battle = GetBattlePetJournal()->GetPetBattle();
     if (!battle)
         return;
 
     if (petBattleRequestUpdate.Canceled)
     {
-        delete battle;
+        sPetBattleMgr.DestroyPetBattle(battle);
 
         if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
         {
@@ -129,20 +134,23 @@ void WorldSession::HandlePetBattleRequestUpdate(WorldPackets::BattlePet::PetBatt
     else
     {
         battle->StartBattle();
-        if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
+        /*if (Player* challenger = ObjectAccessor::FindPlayer(petBattleRequestUpdate.TargetGUID))
             challenger->SetRooted(true);
-        _player->SetRooted(true);
+        _player->SetRooted(true);*/
     }
 }
 
 void WorldSession::HandlePetBattleRequestWild(WorldPackets::BattlePet::PetBattleRequestWild& petBattleRequestWild)
 {
-    if (GetBattlePetMgr()->GetPetBattle())
+    if (GetBattlePetJournal()->GetPetBattle())
         return;
 
-    PetBattle* battle = new PetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo);
+    PetBattle* battle = sPetBattleMgr.CreatePetBattle(_player, petBattleRequestWild.TargetGuid, petBattleRequestWild.LocationInfo);
+    if (!battle)
+        return;
+
     battle->StartBattle();
-    _player->SetRooted(true);
+    //_player->SetRooted(true);
 }
 
 void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattleFinalNotify& /*petBattleFinalNotify*/)
@@ -150,12 +158,12 @@ void WorldSession::HandlePetBattleFinalNotify(WorldPackets::BattlePet::PetBattle
     // SMSG_PET_BATTLE_FINISHED
     WorldPackets::BattlePet::PetBattleFinished finished;
     SendPacket(finished.Write());
-    _player->SetRooted(false);
+    //_player->SetRooted(false);
 }
 
 void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput& petBattleInput)
 {
-    PetBattle* battle = GetBattlePetMgr()->GetPetBattle();
+    PetBattle* battle = GetBattlePetJournal()->GetPetBattle();
     if (!battle)
         return;
 
@@ -173,7 +181,7 @@ void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput&
             battle->UseAbility(_player, petBattleInput.AbilityID);
             break;
         case PETBATTLE_MOVE_CAGE:
-            battle->UseAbility(_player, TrapSpells[GetBattlePetMgr()->GetTrapLevel()]);
+            battle->UseAbility(_player, TrapSpells[GetBattlePetJournal()->GetTrapLevel()]);
             break;
         default:
             break;
@@ -182,23 +190,21 @@ void WorldSession::HandlePetBattleInput(WorldPackets::BattlePet::PetBattleInput&
 
 void WorldSession::HandlePetBattleQuitNotify(WorldPackets::BattlePet::PetBattleQuitNotify& /*petBattleQuitNotify*/)
 {
-    PetBattle* battle = GetBattlePetMgr()->GetPetBattle();
+    PetBattle* battle = GetBattlePetJournal()->GetPetBattle();
     if (!battle)
         return;
 
     WorldPackets::BattlePet::PetBattleFinished finished;
     battle->NotifyParticipants(finished.Write());
-
-   // TODO: slot.Pet is a COPY, this won't probably work unless we work with original objects
     
    /*for (auto& slot : GetBattlePetMgr()->GetSlots())
         slot.Pet.Health = uint32(ceil(slot.Pet.Health / battle->GetForfeitPenalty()));*/
 
-    delete battle;
+    sPetBattleMgr.DestroyPetBattle(battle);
 }
 
 void WorldSession::HandlePetBattleReplaceFrontPet(WorldPackets::BattlePet::PetBattleReplaceFrontPet& petBattleReplaceFrontPet)
 {
-    if (PetBattle* battle = GetBattlePetMgr()->GetPetBattle())
+    if (PetBattle* battle = GetBattlePetJournal()->GetPetBattle())
         battle->SwapPet(_player, petBattleReplaceFrontPet.FrontPet);
 }
