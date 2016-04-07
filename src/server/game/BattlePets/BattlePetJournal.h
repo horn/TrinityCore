@@ -44,6 +44,19 @@ enum BattlePetDBFlags
     BATTLE_PET_DB_FLAG_SPELL_3_ROW_2    = 0x40
 };
 
+enum BattlePetDBSpeciesFlags
+{
+    SPECIES_FLAG_UNK1                   = 0x002,
+    SPECIES_FLAG_UNK2                   = 0x004,
+    SPECIES_FLAG_CAPTURABLE             = 0x008,
+    SPECIES_FLAG_CANT_TRADE             = 0x010,
+    SPECIES_FLAG_UNOBTAINABLE           = 0x020,
+    SPECIES_FLAG_UNIQUE                 = 0x040,
+    SPECIES_FLAG_CANT_BATTLE            = 0x080,
+    SPECIES_FLAG_UNK3                   = 0x200,
+    SPECIES_FLAG_ELITE                  = 0x400,
+};
+
 // 6.2.4
 enum FlagsControlType
 {
