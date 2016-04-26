@@ -10,13 +10,15 @@
 2. 
 3. 
 
-**Branch(es)**: 335/6x
+**Branch(es)**: 335/6x  
 
-**TC hash/commit**:
+**TC hash/commit**:  
 
-**TDB version**:
+**TDB version**:  
 
-**Operating system**:
+**Operating system**:  
+
+**Linking model**: static/dynamic
 
 
 [//]: # (This template is for problem reports, for other type of reports edit it accordingly)

@@ -48,6 +48,9 @@ void TargetedMovementGeneratorMedium<T, D>::_setTargetLocation(T* owner, bool up
     {
         if (!i_offset)
         {
+            if (i_target->IsWithinDistInMap(owner, CONTACT_DISTANCE))
+                return;
+
             // to nearest contact position
             i_target->GetContactPoint(owner, x, y, z);
         }
@@ -265,9 +268,9 @@ void FollowMovementGenerator<Creature>::_updateSpeed(Creature* owner)
     if (!owner->IsPet() || !owner->IsInWorld() || !i_target.isValid() || i_target->GetGUID() != owner->GetOwnerGUID())
         return;
 
-    owner->UpdateSpeed(MOVE_RUN, true);
-    owner->UpdateSpeed(MOVE_WALK, true);
-    owner->UpdateSpeed(MOVE_SWIM, true);
+    owner->UpdateSpeed(MOVE_RUN);
+    owner->UpdateSpeed(MOVE_WALK);
+    owner->UpdateSpeed(MOVE_SWIM);
 }
 
 template<>

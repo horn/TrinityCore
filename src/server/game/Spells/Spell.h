@@ -31,6 +31,7 @@ namespace WorldPackets
     {
         struct SpellCastRequest;
         struct SpellTargetData;
+        struct SpellAmmo;
         struct SpellCastData;
     }
 }
@@ -441,6 +442,9 @@ class TC_GAME_API Spell
         void EffectChangeBattlePetQuality(SpellEffIndex effIndex);
         void EffectCreateHeirloomItem(SpellEffIndex effIndex);
         void EffectUpgradeHeirloom(SpellEffIndex effIndex);
+        void EffectApplyEnchantIllusion(SpellEffIndex effIndex);
+        void EffectUpdatePlayerPhase(SpellEffIndex effIndex);
+        void EffectUpdateZoneAurasAndPhases(SpellEffIndex effIndex);
 
         typedef std::set<Aura*> UsedSpellMods;
 
@@ -813,6 +817,7 @@ class TC_GAME_API Spell
         void CalculateJumpSpeeds(SpellEffectInfo const* effInfo, float dist, float& speedxy, float& speedz);
 
         void UpdateSpellCastDataTargets(WorldPackets::Spells::SpellCastData& data);
+        void UpdateSpellCastDataAmmo(WorldPackets::Spells::SpellAmmo& data);
 
         SpellCastResult CanOpenLock(uint32 effIndex, uint32 lockid, SkillType& skillid, int32& reqSkillValue, int32& skillValue);
         // -------------------------------------------
