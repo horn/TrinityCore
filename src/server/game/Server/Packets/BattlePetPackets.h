@@ -292,6 +292,7 @@ namespace WorldPackets
 
         struct PetBattlePetUpdateInfo
         {
+            // TODO: consider replacing JournalInfo pointer with variables
             BattlePetJournalInfo* JournalInfo = nullptr;
             uint32 NpcTeamMemberId = 0;
             uint16 StatusFlags = 0;

@@ -499,7 +499,7 @@ void BattlePetJournal::SummonPet(ObjectGuid guid)
         return;
 
     // TODO: try to find better way (_summonedPetGuid, _summonedPet)
-    //       also if SummonCreature fails for some reason we should set this back to ObjectGuid::Empty
+    //       also if SummonCreature fails for some reason we should set this back to ObjectGuid::Empty (causes crashes currently)
     _summonedPetGuid = guid;
     _owner->GetPlayer()->CastSpell(_owner->GetPlayer(), speciesEntry->SummonSpellID ? speciesEntry->SummonSpellID : uint32(SPELL_SUMMON_BATTLE_PET_DEFAULT));
 }

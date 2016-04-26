@@ -18,7 +18,7 @@
 #include "PetBattleAbility.h"
 #include "Log.h"
 
-std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectInfo> PetBattleAbility::_effectsInfo
+std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectTypeInfo> PetBattleAbility::_effectTypesInfo
 {
     //{EFFECT_DO_NOTHING,      {TARGET_NONE}},
     {EFFECT_STANDARD_HEAL,   {PETBATTLE_EFFECT_TYPE_SET_HEALTH,    TARGET_CASTER, &PetBattleAbility::EffectNULL}},
@@ -52,17 +52,51 @@ std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectInfo> Pet
     {EFFECT_EQUALIZE_HEALTH*/
 };
 
-void PetBattleAbility::EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo* /*effectTarget*/)
+// TODO: initialize
+std::unordered_map<uint32 /*abilityId*/, std::set<BattlePetAbilityTurnEntry const*>> PetBattleAbility::_abilityTurnsByAbility;
+std::unordered_map<uint32 /*abilityTurnId*/, std::set<BattlePetAbilityEffectEntry const*>> PetBattleAbility::_abilityEffectsByTurn;
+
+void PetBattleAbility::ProcessEffects()
 {
-    //TC_LOG_ERROR("server", "Received battle pet ability %s (ID: %u) with unhandled effect %s");
+    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])
+    {
+        if (turnEntry->Turn == _round)
+        {
+            for (BattlePetAbilityEffectEntry const* effectEntry : _abilityEffectsByTurn[turnEntry->ID])
+            {
+                // TODO: get BattlePetObject* target
+                //       if explicit target exists (from DB), use it
+                //       otherwise use implicit target
+                /*(this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(target);
+
+                // TODO: generate PetBattleEffect and PetBattleEffectTarget properly and append them to PetBattle::_roundResult
+                WorldPackets::BattlePet::PetBattleEffect eff;
+                eff.PetBattleEffectType = _effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].type;
+                WorldPackets::BattlePet::PetBattleEffectTarget effTarget;
+                effTarget.stuff = values;*/
+            }
+
+            break;
+        }
+    }
 }
 
-void PetBattleAbility::EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget)
+void PetBattleAbility::EffectNULL(PetBattle::PetBattleObject* /*effectTarget*/)
+{
+    //TC_LOG_ERROR("server.dunno", "Received battle pet ability %s (ID: %u) with unhandled effect %s", _abilityInfo->Name, _abilityInfo->ID, currentEffect->name);
+}
+
+void PetBattleAbility::EffectUnused(PetBattle::PetBattleObject* /*effectTarget*/)
 {
 
 }
 
-void PetBattleAbility::EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget)
+void PetBattleAbility::EffectHeal(PetBattle::PetBattleObject* effectTarget)
 {
-    //effectTarget->States[STATE_STAT_STAMINA] -= effect->points; // points modified by power and stuff
+    //_caster->ModifyHealth(effectTarget, currentEffect->points);
+}
+
+void PetBattleAbility::EffectDealDamage(PetBattle::PetBattleObject* effectTarget)
+{
+    //_caster->ModifyHealth(effectTarget, -currentEffect->points); // points modified by power and stuff
 }

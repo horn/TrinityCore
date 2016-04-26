@@ -18,7 +18,8 @@
 #ifndef PetBattleAbility_h__
 #define PetBattleAbility_h__
 
-#include "BattlePetPackets.h"
+#include "DB2Stores.h"
+#include "PetBattle.h"
 
 enum PetBattleAbilityProcType
 {
@@ -162,26 +163,33 @@ PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
 class PetBattleAbility
 {
 public:
-    PetBattleAbility(WorldPackets::BattlePet::PetBattlePetUpdateInfo* caster) : _caster(caster) { }
+    PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster) :
+        _abilityId(abilityId), _caster(caster) { }
 
-    WorldPackets::BattlePet::PetBattlePetUpdateInfo* GetCaster() { return _caster; }
+    PetBattle::PetBattleObject* GetCaster() { return _caster; }
 
-    void EffectNULL(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
-    void EffectUnused(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
-    void EffectDealDamage(WorldPackets::BattlePet::PetBattlePetUpdateInfo* effectTarget);
+    void ProcessEffects();
+
+    void EffectNULL(PetBattle::PetBattleObject* effectTarget);
+    void EffectUnused(PetBattle::PetBattleObject* effectTarget);
+    void EffectHeal(PetBattle::PetBattleObject* effectTarget);
+    void EffectDealDamage(PetBattle::PetBattleObject* effectTarget);
 
 private:
-    WorldPackets::BattlePet::PetBattlePetUpdateInfo* _caster = nullptr;
-    uint8 _round = 0;
+    PetBattle::PetBattleObject* _caster = nullptr;
+    uint32 _abilityId = 0; // or BattlePetAbilityEntry const* instead
+    uint8 _round = 0; // separate auras?
 
-    struct EffectInfo
+    struct EffectTypeInfo
     {
         PetBattleEffectType type;
         PetBattleEffectTarget implicitTarget;
-        // TODO: this will need access to more stuff (effectID, properties...)
-        void(PetBattleAbility::*function)(WorldPackets::BattlePet::PetBattlePetUpdateInfo*);
+        // TODO: handler will need access to more stuff (effectID, properties...) -> waiting for containerception of DB2Stores
+        void(PetBattleAbility::*handler)(PetBattle::PetBattleObject*);
     };
-    static std::unordered_map<PetBattleAbilityEffectName, EffectInfo> _effectsInfo;
+    static std::unordered_map<PetBattleAbilityEffectName, EffectTypeInfo> _effectTypesInfo;
+    static std::unordered_map<uint32 /*abilityId*/, std::set<BattlePetAbilityTurnEntry const*>> _abilityTurnsByAbility; // TODO: getter here or move to singleton
+    static std::unordered_map<uint32 /*abilityTurnId*/, std::set<BattlePetAbilityEffectEntry const*>> _abilityEffectsByTurn;
 };
 
 #endif // PetBattleAbility_h__

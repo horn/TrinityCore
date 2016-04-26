@@ -18,8 +18,23 @@
 #include "BattlePetJournal.h"
 #include "Creature.h"
 #include "ObjectAccessor.h"
-#include "PetBattle.h"
+#include "PetBattleAbility.h"
 #include "Player.h"
+
+void PetBattle::PetBattleObject::ModifyHealth(PetBattle::PetBattleObject* target, int32 points)
+{
+    target->UpdateInfo.States[STATE_STAT_STAMINA]; // not sure if stamina is health or max health
+
+    /*for (WorldPackets::BattlePet::BattlePetAura aura : UpdateInfo.Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+                if (battlePetAbilityTurnEntry->ProcType == points < 0 ? PET_BATTLE_EVENT_ON_DAMAGE_DEALT : PET_BATTLE_EVENT_ON_HEAL_DEALT)
+                    // process effects
+
+    for (WorldPackets::BattlePet::BattlePetAura aura : target->UpdateInfo.Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+                if (battlePetAbilityTurnEntry->ProcType == points < 0 ? PET_BATTLE_EVENT_ON_DAMAGE_TAKEN : PET_BATTLE_EVENT_ON_HEAL_TAKEN)
+                    // process effects*/
+}
 
 // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
 PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo)
@@ -93,8 +108,8 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
             if (!pet || pet->JournalInfo.Health == 0) // pet is dead
                 continue;
 
-            _objects[PBOID].Slot = slotId++;
-            _objects[PBOID].JournalInfo = &pet->JournalInfo;
+            _objects[PBOID].UpdateInfo.Slot = slotId++;
+            _objects[PBOID].UpdateInfo.JournalInfo = &pet->JournalInfo;
 
             uint8 abilitySlotId = 0;
             for (auto abilityId : pet->GetActiveAbilities())
@@ -103,18 +118,18 @@ WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* pla
                 ability.Id = abilityId;
                 ability.Slot = abilitySlotId++;
                 ability.PBOID = PBOID;
-                _objects[PBOID].Abilities.push_back(ability);
+                _objects[PBOID].UpdateInfo.Abilities.push_back(ability);
             }
 
-            _objects[PBOID].States[STATE_STAT_POWER] = pet->JournalInfo.Power;
-            _objects[PBOID].States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
-            _objects[PBOID].States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
-            _objects[PBOID].States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
+            _objects[PBOID].UpdateInfo.States[STATE_STAT_POWER] = pet->JournalInfo.Power;
+            _objects[PBOID].UpdateInfo.States[STATE_STAT_STAMINA] = pet->GetBaseStateValue(STATE_STAT_STAMINA); // from max or current health?
+            _objects[PBOID].UpdateInfo.States[STATE_STAT_SPEED] = pet->GetBaseStateValue(STATE_STAT_SPEED);
+            _objects[PBOID].UpdateInfo.States[STATE_STAT_CRIT_CHANCE] = 5; // 5 seems to be default value
             // probably add proper family check here (pet->GetFamily() != BATTLE_PET_FAMILY_MAX)
-            _objects[PBOID].States[FamilyStates[pet->GetFamily()]] = 1; // STATE_PASSIVE_FAMILYTYPE
+            _objects[PBOID].UpdateInfo.States[FamilyStates[pet->GetFamily()]] = 1; // STATE_PASSIVE_FAMILYTYPE
             // add other states (pve enemies)
             // fill auras and other stuff
-            update.Pets.push_back(_objects[PBOID]);
+            update.Pets.push_back(_objects[PBOID].UpdateInfo);
             PBOID++;
         }
     }
@@ -167,6 +182,7 @@ void PetBattle::StartBattle()
         movement.SetFacing(_participants[i].player->GetAngle(&_locationInfo.BattleOrigin));
         movement.Launch();
         init.PlayerUpdate[i] = _participants[i].playerUpdate;
+        _participants[i].roundTime = _participants[i].playerUpdate.RoundTimeSecs * IN_MILLISECONDS;
     }
 
     // TODO: send enviros and set other fields properly
@@ -220,25 +236,57 @@ void PetBattle::Update(uint32 diff)
 {
     for (uint8 i = 0; i < 2; ++i)
     {
-        // TODO: diff == milliseconds, this timer currently doesn't work !!!
-        if (_participants[i].playerUpdate.RoundTimeSecs <= diff)
+        // TODO: pve battles don't have limited time
+        if (_participants[i].roundTime <= diff)
             _participants[i].roundCompleted = true;
         else
-            _participants[i].playerUpdate.RoundTimeSecs -= diff;
+            _participants[i].roundTime -= diff;
     }
 
     if (_participants[0].roundCompleted && _participants[1].roundCompleted)
     {
+        ProcessRound();
+
         // TODO: handle round and battle endings
-        //       process spells - on round start
-        //       process spells and other moves and procs (on dmg taken/done etc.)
-        //       process spells - on round end
-        //       process aura updates
-        _participants[0].playerUpdate.RoundTimeSecs = 30; // maybe move to EndRound()
-        _participants[1].playerUpdate.RoundTimeSecs = 30; // TODO: reduce round time based on inactivity
+
+        for (uint8 i = 0; i < 2; ++i)
+        {
+            // move to EndRound() maybe
+            // TODO: reduce round time based on inactivity
+            _participants[i].playerUpdate.RoundTimeSecs = 30;
+            _participants[i].roundTime = _participants[i].playerUpdate.RoundTimeSecs * IN_MILLISECONDS;
+        }
+
         EndRound();
         //return;
     }
+}
+
+void PetBattle::ProcessRound()
+{
+    /*// First of all, process ability turns with PET_BATTLE_EVENT_ON_ROUND_START
+    for (PetBattleObject battleObj : _objects)
+        for (WorldPackets::BattlePet::BattlePetAura aura : battleObj.UpdateInfo.Auras)
+            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+                if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_ROUND_START)
+                    // process effects
+
+    // Sort players (or all battle objects?) based on speed
+
+    // Cast abilities in correct order
+    for (...)
+        PetBattleAbility(_participants[i]->abilityId, _participants[i].playerUpdate.FrontPet); // convert FrontPet (int) to PetBattleObject
+
+    // append PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN
+    // Process auras
+    // append PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END
+
+    // In the end, process ability turns with PET_BATTLE_EVENT_ON_ROUND_END
+    for (PetBattleObject battleObj : _objects)
+        for (WorldPackets::BattlePet::BattlePetAura aura : battleObj.UpdateInfo.Auras)
+            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+                if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_ROUND_END)
+                    // process effects*/
 }
 
 void PetBattle::EndRound()
@@ -313,7 +361,7 @@ void PetBattle::UseAbility(Player* player, uint32 ability)
         return;
 
     // get front pets, compare speeds and PetBattleAbility ability(caster); for (effect : ability.effects) effecthandler(target);
-
+    _participants[playerId].abilityId = ability;
     _participants[playerId].roundCompleted = true;
 }
 

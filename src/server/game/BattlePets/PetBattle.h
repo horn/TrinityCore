@@ -18,7 +18,7 @@
 #ifndef PetBattle_h__
 #define PetBattle_h__
 
-#include "PetBattleAbility.h"
+#include "BattlePetPackets.h"
 
 enum PBOIDNames
 {
@@ -58,6 +58,17 @@ public:
         WorldPackets::BattlePet::PlayerUpdate playerUpdate;
 
         bool roundCompleted = false;
+        uint32 roundTime = 0;
+        uint32 abilityId = 0;
+    };
+
+    struct PetBattleObject
+    {
+        // PetBattleUpdateInfo::States should be enough to hold all info during the battle.
+        // If not, replace UpdateInfo with variables.
+        WorldPackets::BattlePet::PetBattlePetUpdateInfo UpdateInfo;
+
+        void ModifyHealth(PetBattleObject* target, int32 points);
     };
 
     PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
@@ -66,12 +77,13 @@ public:
     void StartBattle();
     void EndBattle(uint8 winner, bool forfeit);
     void Update(uint32 diff);
+    void ProcessRound();
     void EndRound();
     void SwapPet(Player* player, uint8 frontPet);
     void ForfeitBattle(Player* player);
     void UseAbility(Player* player, uint32 ability);
 
-    WorldPackets::BattlePet::PetBattlePetUpdateInfo* GetPetBattleObject(PBOIDNames pboid) { return &_objects[pboid]; }
+    PetBattleObject* GetPetBattleObject(PBOIDNames pboid) { return &_objects[pboid]; }
 
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
     uint8 GetForfeitPenalty() const { return _forfeitPenalty; }
@@ -80,9 +92,7 @@ public:
 
 private:
     Participant _participants[2];
-    // PetBattleUpdateInfo::States should be enough to hold all info during the battle.
-    // If not, replace PetBattleUpdateInfo::JournalInfo with variables and/or make a wrapper struct.
-    WorldPackets::BattlePet::PetBattlePetUpdateInfo _objects[PBOID_INVALID];
+    PetBattleObject _objects[PBOID_INVALID];
 
     WorldPackets::BattlePet::LocationInfo _locationInfo;
     bool _isPvP = false;
