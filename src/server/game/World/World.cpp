@@ -1184,6 +1184,7 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_OFFHAND_CHECK_AT_SPELL_UNLEARN]            = sConfigMgr->GetBoolDefault("OffhandCheckAtSpellUnlearn", true);
 
     m_int_configs[CONFIG_CREATURE_PICKPOCKET_REFILL] = sConfigMgr->GetIntDefault("Creature.PickPocketRefillDelay", 10 * MINUTE);
+    m_int_configs[CONFIG_CREATURE_STOP_FOR_PLAYER] = sConfigMgr->GetIntDefault("Creature.MovingStopTimeForPlayer", 3 * MINUTE * IN_MILLISECONDS);
 
     if (int32 clientCacheId = sConfigMgr->GetIntDefault("ClientCacheVersion", 0))
     {
@@ -1816,14 +1817,14 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading skill tier info...");
     sObjectMgr->LoadSkillTiers();
 
+    TC_LOG_INFO("server.loading", "Loading Criteria Modifier trees...");
+    sCriteriaMgr->LoadCriteriaModifiersTree();
+    TC_LOG_INFO("server.loading", "Loading Criteria Lists...");
+    sCriteriaMgr->LoadCriteriaList();
+    TC_LOG_INFO("server.loading", "Loading Criteria Data...");
+    sCriteriaMgr->LoadCriteriaData();
     TC_LOG_INFO("server.loading", "Loading Achievements...");
     sAchievementMgr->LoadAchievementReferenceList();
-    TC_LOG_INFO("server.loading", "Loading Achievement Criteria Modifier trees...");
-    sAchievementMgr->LoadAchievementCriteriaModifiersTree();
-    TC_LOG_INFO("server.loading", "Loading Achievement Criteria Lists...");
-    sAchievementMgr->LoadAchievementCriteriaList();
-    TC_LOG_INFO("server.loading", "Loading Achievement Criteria Data...");
-    sAchievementMgr->LoadAchievementCriteriaData();
     TC_LOG_INFO("server.loading", "Loading Achievement Rewards...");
     sAchievementMgr->LoadRewards();
     TC_LOG_INFO("server.loading", "Loading Achievement Reward Locales...");

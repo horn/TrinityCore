@@ -425,8 +425,8 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo) const
         }
         case CONDITION_REALM_ACHIEVEMENT:
         {
-            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(ConditionValue1);
-            if (achievement && sAchievementMgr->IsRealmCompleted(achievement, std::numeric_limits<uint32>::max()))
+            AchievementEntry const* achievement = sAchievementStore.LookupEntry(ConditionValue1);
+            if (achievement && sAchievementMgr->IsRealmCompleted(achievement))
                 condMeets = true;
             break;
         }
@@ -1378,7 +1378,8 @@ bool ConditionMgr::addToPhases(Condition* cond) const
 {
     if (!cond->SourceEntry)
     {
-        PhaseInfo& p = sObjectMgr->GetAreaPhasesForLoading();
+        bool found = false;
+        PhaseInfo& p = sObjectMgr->GetAreaAndZonePhasesForLoading();
         for (auto phaseItr = p.begin(); phaseItr != p.end(); ++phaseItr)
         {
             for (PhaseInfoStruct& phase : phaseItr->second)
@@ -1386,12 +1387,15 @@ bool ConditionMgr::addToPhases(Condition* cond) const
                 if (phase.Id == cond->SourceGroup)
                 {
                     phase.Conditions.push_back(cond);
-                    return true;
+                    found = true;
                 }
             }
         }
+
+        if (found)
+            return true;
     }
-    else if (std::vector<PhaseInfoStruct>* phases = sObjectMgr->GetPhasesForAreaForLoading(cond->SourceEntry))
+    else if (std::vector<PhaseInfoStruct>* phases = sObjectMgr->GetPhasesForAreaOrZoneForLoading(cond->SourceEntry))
     {
         for (PhaseInfoStruct& phase : *phases)
         {
@@ -1908,7 +1912,7 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond) const
         }
         case CONDITION_ACHIEVEMENT:
         {
-            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(cond->ConditionValue1);
+            AchievementEntry const* achievement = sAchievementStore.LookupEntry(cond->ConditionValue1);
             if (!achievement)
             {
                 TC_LOG_ERROR("sql.sql", "%s has non existing achivement id (%u), skipped.", cond->ToString(true).c_str(), cond->ConditionValue1);
@@ -2211,7 +2215,7 @@ bool ConditionMgr::isConditionTypeValid(Condition* cond) const
             break;
         case CONDITION_REALM_ACHIEVEMENT:
         {
-            AchievementEntry const* achievement = sAchievementMgr->GetAchievement(cond->ConditionValue1);
+            AchievementEntry const* achievement = sAchievementStore.LookupEntry(cond->ConditionValue1);
             if (!achievement)
             {
                 TC_LOG_ERROR("sql.sql", "%s has non existing realm first achivement id (%u), skipped.", cond->ToString(true).c_str(), cond->ConditionValue1);
