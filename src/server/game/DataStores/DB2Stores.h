@@ -169,6 +169,8 @@ public:
     typedef std::unordered_map<uint32, std::vector<SpellProcsPerMinuteModEntry const*>> SpellProcsPerMinuteModContainer;
     typedef std::unordered_set<uint32> ToyItemIdsContainer;
     typedef std::unordered_map<uint32, BattlePetSpeciesEntry const*> BattlePetSpeciesContainer;
+    typedef std::unordered_map<uint32, std::vector<BattlePetAbilityTurnEntry const*>> BattlePetAbilityTurnContainer;
+    typedef std::unordered_map<uint32, std::vector<BattlePetAbilityEffectEntry const*>> BattlePetAbilityEffectContainer;
 
     static DB2Manager& Instance();
 
@@ -203,6 +205,8 @@ public:
     std::vector<SpellProcsPerMinuteModEntry const*> GetSpellProcsPerMinuteMods(uint32 spellprocsPerMinuteId) const;
     bool IsToyItem(uint32 toy) const;
     BattlePetSpeciesEntry const* GetBattlePetSpeciesByCreatureId(uint32 creatureId) const;
+    std::vector<BattlePetAbilityTurnEntry const*> GetAbilityTurnByAbilityId(uint32 abilityId) const;
+    std::vector<BattlePetAbilityEffectEntry const*> GetAbilityEffectByTurnId(uint32 turnId) const;
 
 private:
     StorageMap _stores;
@@ -231,6 +235,8 @@ private:
     SpellProcsPerMinuteModContainer _spellProcsPerMinuteMods;
     ToyItemIdsContainer _toys;
     BattlePetSpeciesContainer _battlePetSpecies;
+    BattlePetAbilityTurnContainer _battlePetAbilityTurn;
+    BattlePetAbilityEffectContainer _battlePetAbilityEffect;
 };
 
 #define sDB2Manager DB2Manager::Instance()

@@ -166,9 +166,13 @@ public:
     PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster) :
         _abilityId(abilityId), _caster(caster) { }
 
+    friend class PetBattle;
+
     uint32 GetId() const { return _abilityId; }
 
     PetBattle::PetBattleObject* GetCaster() { return _caster; }
+
+    static void LoadAbilities();
 
     void ProcessEffects();
     void ProcessProc(PetBattleAbilityProcType procType);

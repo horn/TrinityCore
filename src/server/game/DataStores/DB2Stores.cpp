@@ -532,6 +532,12 @@ void DB2Manager::LoadStores(std::string const& dataPath, uint32 defaultLocale)
     for (BattlePetSpeciesEntry const* species : sBattlePetSpeciesStore)
         _battlePetSpecies[species->CreatureID] = species;
 
+    for (BattlePetAbilityTurnEntry const* abilityTurn : sBattlePetAbilityTurnStore)
+        _battlePetAbilityTurn[abilityTurn->AbilityID].push_back(abilityTurn);
+
+    for (BattlePetAbilityEffectEntry const* abilityEffect : sBattlePetAbilityEffectStore)
+        _battlePetAbilityEffect[abilityEffect->TurnID].push_back(abilityEffect);
+
     // error checks
     if (bad_db2_files.size() >= DB2FilesCount)
     {
@@ -915,4 +921,22 @@ BattlePetSpeciesEntry const* DB2Manager::GetBattlePetSpeciesByCreatureId(uint32 
         return itr->second;
 
     return nullptr;
+}
+
+std::vector<BattlePetAbilityTurnEntry const*> DB2Manager::GetAbilityTurnByAbilityId(uint32 abilityId) const
+{
+    auto itr = _battlePetAbilityTurn.find(abilityId);
+    if (itr != _battlePetAbilityTurn.end())
+        return itr->second;
+
+    return std::vector<BattlePetAbilityTurnEntry const*>();
+}
+
+std::vector<BattlePetAbilityEffectEntry const*> DB2Manager::GetAbilityEffectByTurnId(uint32 turnId) const
+{
+    auto itr = _battlePetAbilityEffect.find(turnId);
+    if (itr != _battlePetAbilityEffect.end())
+        return itr->second;
+
+    return std::vector<BattlePetAbilityEffectEntry const*>();
 }

@@ -44,6 +44,8 @@ enum PetBattleMoveType
     PETBATTLE_MOVE_TYPE_UNK3    = 4  // battle end after SMSG_PET_BATTLE_FINAL_ROUND, sent together with CMSG_PET_BATTLE_FINAL_NOTIFY
 };
 
+class PetBattleAbility;
+
 class PetBattle
 {
 public:

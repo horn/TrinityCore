@@ -56,6 +56,23 @@ std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectTypeInfo>
 std::unordered_map<uint32 /*abilityId*/, std::set<BattlePetAbilityTurnEntry const*>> PetBattleAbility::_abilityTurnsByAbility;
 std::unordered_map<uint32 /*abilityTurnId*/, std::set<BattlePetAbilityEffectEntry const*>> PetBattleAbility::_abilityEffectsByTurn;
 
+void PetBattleAbility::LoadAbilities()
+{
+    for (BattlePetAbilityEntry const* ability : sBattlePetAbilityStore)
+    {
+        std::vector<BattlePetAbilityTurnEntry const*> turns = sDB2Manager.GetAbilityTurnByAbilityId(ability->ID);
+        if (!turns.empty())
+            _abilityTurnsByAbility[ability->ID] = std::set<BattlePetAbilityTurnEntry const*>(turns.begin(), turns.end());
+    }
+
+    for (BattlePetAbilityTurnEntry const* turn : sBattlePetAbilityTurnStore)
+    {
+        std::vector<BattlePetAbilityEffectEntry const*> abilityEffects = sDB2Manager.GetAbilityEffectByTurnId(turn->ID);
+        if (!abilityEffects.empty())
+            _abilityEffectsByTurn[turn->ID] = std::set<BattlePetAbilityEffectEntry const*>(abilityEffects.begin(), abilityEffects.end());
+    }
+}
+
 void PetBattleAbility::ProcessEffects()
 {
     for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])

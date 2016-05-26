@@ -55,6 +55,7 @@
 #include "MMapFactory.h"
 #include "ObjectMgr.h"
 #include "OutdoorPvPMgr.h"
+#include "PetBattleAbility.h"
 #include "PetBattleMgr.h"
 #include "Player.h"
 #include "PoolMgr.h"
@@ -2111,6 +2112,9 @@ void World::SetInitialWorldSettings()
 
     TC_LOG_INFO("server.loading", "Loading battle pets info...");
     BattlePetJournal::Initialize();
+
+    TC_LOG_INFO("server.loading", "Loading pet battle abilities...");
+    PetBattleAbility::LoadAbilities();
 
     // Preload all cells, if required for the base maps
     if (sWorld->getBoolConfig(CONFIG_BASEMAP_LOAD_GRIDS))
