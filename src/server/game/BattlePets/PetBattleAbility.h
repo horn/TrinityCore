@@ -166,9 +166,12 @@ public:
     PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster) :
         _abilityId(abilityId), _caster(caster) { }
 
+    uint32 GetId() const { return _abilityId; }
+
     PetBattle::PetBattleObject* GetCaster() { return _caster; }
 
     void ProcessEffects();
+    void ProcessProc(PetBattleAbilityProcType procType);
 
     void EffectNULL(PetBattle::PetBattleObject* effectTarget);
     void EffectUnused(PetBattle::PetBattleObject* effectTarget);
@@ -178,7 +181,7 @@ public:
 private:
     PetBattle::PetBattleObject* _caster = nullptr;
     uint32 _abilityId = 0; // or BattlePetAbilityEntry const* instead
-    uint8 _round = 0; // separate auras?
+    uint8 _round = 0;
 
     struct EffectTypeInfo
     {

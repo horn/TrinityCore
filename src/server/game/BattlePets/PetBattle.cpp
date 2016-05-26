@@ -21,19 +21,34 @@
 #include "PetBattleAbility.h"
 #include "Player.h"
 
-void PetBattle::PetBattleObject::ModifyHealth(PetBattle::PetBattleObject* target, int32 points)
+void PetBattle::PetBattleObject::DealDamage(PetBattle::PetBattleObject* target, uint32 points)
 {
-    target->UpdateInfo.States[STATE_STAT_STAMINA]; // not sure if stamina is health or max health
+    target->UpdateInfo.States[STATE_STAT_STAMINA] -= points; // not sure if stamina is health or max health
 
-    /*for (WorldPackets::BattlePet::BattlePetAura aura : UpdateInfo.Auras)
-        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
-                if (battlePetAbilityTurnEntry->ProcType == points < 0 ? PET_BATTLE_EVENT_ON_DAMAGE_DEALT : PET_BATTLE_EVENT_ON_HEAL_DEALT)
-                    // process effects
+    for (auto& aura : Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
+            if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_DAMAGE_DEALT)
+                aura.ProcessProc(PET_BATTLE_EVENT_ON_DAMAGE_DEALT);
 
-    for (WorldPackets::BattlePet::BattlePetAura aura : target->UpdateInfo.Auras)
-        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
-                if (battlePetAbilityTurnEntry->ProcType == points < 0 ? PET_BATTLE_EVENT_ON_DAMAGE_TAKEN : PET_BATTLE_EVENT_ON_HEAL_TAKEN)
-                    // process effects*/
+    for (auto& aura : target->Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
+            if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_DAMAGE_TAKEN)
+                aura.ProcessProc(PET_BATTLE_EVENT_ON_DAMAGE_TAKEN);
+}
+
+void PetBattle::PetBattleObject::DealHeal(PetBattle::PetBattleObject* target, uint32 points)
+{
+    target->UpdateInfo.States[STATE_STAT_STAMINA] += points; // not sure if stamina is health or max health
+
+    for (auto& aura : Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
+            if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_HEAL_DEALT)
+                aura.ProcessProc(PET_BATTLE_EVENT_ON_HEAL_DEALT);
+
+    for (auto& aura : target->Auras)
+        for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
+            if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_HEAL_TAKEN)
+                aura.ProcessProc(PET_BATTLE_EVENT_ON_HEAL_TAKEN);
 }
 
 // maybe more different ctors would be better (Player vs. Player, Player vs. Creature etc.)
@@ -264,18 +279,18 @@ void PetBattle::Update(uint32 diff)
 
 void PetBattle::ProcessRound()
 {
-    /*// First of all, process ability turns with PET_BATTLE_EVENT_ON_ROUND_START
+    // First of all, process ability turns with PET_BATTLE_EVENT_ON_ROUND_START
     for (PetBattleObject battleObj : _objects)
-        for (WorldPackets::BattlePet::BattlePetAura aura : battleObj.UpdateInfo.Auras)
-            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+        for (auto& aura : battleObj.Auras)
+            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
                 if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_ROUND_START)
-                    // process effects
+                    aura.ProcessProc(PET_BATTLE_EVENT_ON_ROUND_START);
 
     // Sort players (or all battle objects?) based on speed
 
     // Cast abilities in correct order
-    for (...)
-        PetBattleAbility(_participants[i]->abilityId, _participants[i].playerUpdate.FrontPet); // convert FrontPet (int) to PetBattleObject
+    //for (...)
+    //    PetBattleAbility(_participants[i]->abilityId, _participants[i].playerUpdate.FrontPet) ability; // convert FrontPet (int) to PetBattleObject
 
     // append PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN
     // Process auras
@@ -283,10 +298,10 @@ void PetBattle::ProcessRound()
 
     // In the end, process ability turns with PET_BATTLE_EVENT_ON_ROUND_END
     for (PetBattleObject battleObj : _objects)
-        for (WorldPackets::BattlePet::BattlePetAura aura : battleObj.UpdateInfo.Auras)
-            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.Id])
+        for (auto& aura : battleObj.Auras)
+            for (BattlePetAbilityTurnEntry const* battlePetAbilityTurnEntry : PetBattleAbility::_abilityTurnsByAbility[aura.GetId()])
                 if (battlePetAbilityTurnEntry->ProcType == PET_BATTLE_EVENT_ON_ROUND_END)
-                    // process effects*/
+                    aura.ProcessProc(PET_BATTLE_EVENT_ON_ROUND_END);
 }
 
 void PetBattle::EndRound()

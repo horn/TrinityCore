@@ -81,6 +81,16 @@ void PetBattleAbility::ProcessEffects()
     }
 }
 
+void PetBattleAbility::ProcessProc(PetBattleAbilityProcType procType)
+{
+    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])
+        if (turnEntry->HasProcType && turnEntry->ProcType == procType)
+            for (BattlePetAbilityEffectEntry const* effectEntry : _abilityEffectsByTurn[turnEntry->ID])
+            {
+                // same as ProcessEffects()
+            }
+}
+
 void PetBattleAbility::EffectNULL(PetBattle::PetBattleObject* /*effectTarget*/)
 {
     //TC_LOG_ERROR("server.dunno", "Received battle pet ability %s (ID: %u) with unhandled effect %s", _abilityInfo->Name, _abilityInfo->ID, currentEffect->name);
@@ -93,10 +103,10 @@ void PetBattleAbility::EffectUnused(PetBattle::PetBattleObject* /*effectTarget*/
 
 void PetBattleAbility::EffectHeal(PetBattle::PetBattleObject* effectTarget)
 {
-    //_caster->ModifyHealth(effectTarget, currentEffect->points);
+    //_caster->DealHeal(effectTarget, currentEffect->points);
 }
 
 void PetBattleAbility::EffectDealDamage(PetBattle::PetBattleObject* effectTarget)
 {
-    //_caster->ModifyHealth(effectTarget, -currentEffect->points); // points modified by power and stuff
+    //_caster->DealDamage(effectTarget, currentEffect->points); // points modified by power and stuff
 }

@@ -68,7 +68,10 @@ public:
         // If not, replace UpdateInfo with variables.
         WorldPackets::BattlePet::PetBattlePetUpdateInfo UpdateInfo;
 
-        void ModifyHealth(PetBattleObject* target, int32 points);
+        void DealDamage(PetBattleObject* target, uint32 points);
+        void DealHeal(PetBattleObject* target, uint32 points);
+
+        std::vector<PetBattleAbility> Auras;
     };
 
     PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
