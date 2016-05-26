@@ -73,7 +73,7 @@ public:
         void DealDamage(PetBattleObject* target, uint32 points);
         void DealHeal(PetBattleObject* target, uint32 points);
 
-        std::vector<PetBattleAbility> Auras;
+        std::vector<PetBattleAbility*> Auras;
     };
 
     PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet::LocationInfo locationInfo);
@@ -98,6 +98,7 @@ public:
 private:
     Participant _participants[2];
     PetBattleObject _objects[PBOID_INVALID];
+    std::list<PetBattleAbility> _abilities;
 
     WorldPackets::BattlePet::LocationInfo _locationInfo;
     bool _isPvP = false;
