@@ -163,14 +163,16 @@ PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
 class PetBattleAbility
 {
 public:
-    PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster) :
-        _abilityId(abilityId), _caster(caster) { }
+    PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster, PetBattle* parentBattle, uint8 casterId) :
+        _caster(caster), _parentBattle(parentBattle), _abilityId(abilityId), _casterId(casterId) { }
 
     friend class PetBattle;
 
     uint32 GetId() const { return _abilityId; }
 
     PetBattle::PetBattleObject* GetCaster() { return _caster; }
+    PetBattleEffectTarget GetEffectTargetName(PetBattleAbilityEffectName const& effect) const;
+    PetBattle::PetBattleObject* GetEffectTarget(PetBattleAbilityEffectName const& effectId) const;
 
     static void LoadAbilities();
 
@@ -184,8 +186,10 @@ public:
 
 private:
     PetBattle::PetBattleObject* _caster = nullptr;
+    PetBattle* _parentBattle;
     uint32 _abilityId = 0; // or BattlePetAbilityEntry const* instead
     uint8 _round = 0;
+    uint8 _casterId;
 
     struct EffectTypeInfo
     {

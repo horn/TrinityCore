@@ -52,7 +52,6 @@ std::unordered_map<PetBattleAbilityEffectName, PetBattleAbility::EffectTypeInfo>
     {EFFECT_EQUALIZE_HEALTH*/
 };
 
-// TODO: initialize
 std::unordered_map<uint32 /*abilityId*/, std::set<BattlePetAbilityTurnEntry const*>> PetBattleAbility::_abilityTurnsByAbility;
 std::unordered_map<uint32 /*abilityTurnId*/, std::set<BattlePetAbilityEffectEntry const*>> PetBattleAbility::_abilityEffectsByTurn;
 
@@ -73,6 +72,56 @@ void PetBattleAbility::LoadAbilities()
     }
 }
 
+PetBattleEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffectName const& effect) const
+{
+    for (auto const& item : _effectTypesInfo)
+        if (item.first == effect)
+            return item.second.implicitTarget;
+
+    return TARGET_NONE;
+}
+
+PetBattle::PetBattleObject* PetBattleAbility::GetEffectTarget(PetBattleAbilityEffectName const& effectId) const
+{
+    uint8 index = 0;
+
+    switch (GetEffectTargetName(effectId))
+    {
+        case TARGET_CASTER:
+            index = _casterId ? PBOID_P1_PET_0 : PBOID_P0_PET_0;
+            break;
+        case TARGET_CASTERS_TEAM_PET_1:
+            index = _casterId ? PBOID_P1_PET_1 : PBOID_P0_PET_1;
+            break;
+        case TARGET_CASTERS_TEAM_PET_2:
+            index = _casterId ? PBOID_P1_PET_2 : PBOID_P0_PET_2;
+            break;
+        case TARGET_CASTERS_TEAM_PAD:
+            index = _casterId ? PBOID_PAD_1 : PBOID_PAD_0;
+            break;
+        case TARGET_ENEMY:
+            index = _casterId ? PBOID_P0_PET_0 : PBOID_P1_PET_0;
+            break;
+        case TARGET_ENEMYS_TEAM_PET_1:
+            index = _casterId ? PBOID_P0_PET_1 : PBOID_P1_PET_1;
+            break;
+        case TARGET_ENEMYS_TEAM_PET_2:
+            index = _casterId ? PBOID_P0_PET_2 : PBOID_P1_PET_2;
+            break;
+        case TARGET_ENEMYS_TEAM_PAD:
+            index = _casterId ? PBOID_PAD_0 : PBOID_PAD_1;
+            break;
+        case TARGET_WEATHER:
+            index = PBOID_WEATHER;
+            break;
+        case TARGET_NONE: // TODO: check what to do with no target
+        default:
+            return nullptr;
+    }
+
+    return _parentBattle->GetPetBattleObject(PBOIDNames(index));
+}
+
 void PetBattleAbility::ProcessEffects()
 {
     for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])
@@ -84,10 +133,12 @@ void PetBattleAbility::ProcessEffects()
                 // TODO: get BattlePetObject* target
                 //       if explicit target exists (from DB), use it
                 //       otherwise use implicit target
-                /*(this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(target);
+                PetBattle::PetBattleObject* target = GetEffectTarget(PetBattleAbilityEffectName(effectEntry->EffectPropertiesID));
+
+                (this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(target);
 
                 // TODO: generate PetBattleEffect and PetBattleEffectTarget properly and append them to PetBattle::_roundResult
-                WorldPackets::BattlePet::PetBattleEffect eff;
+                /*WorldPackets::BattlePet::PetBattleEffect eff;
                 eff.PetBattleEffectType = _effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].type;
                 WorldPackets::BattlePet::PetBattleEffectTarget effTarget;
                 effTarget.stuff = values;*/

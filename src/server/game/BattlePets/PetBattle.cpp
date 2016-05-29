@@ -282,7 +282,7 @@ void PetBattle::ProcessRound()
     // First of all, create abilities casted this turn - can be moved to PetBattle::UseAbility() with proper checks
     for (uint8 i = 0; i < 2; ++i)
     {
-        PetBattleAbility ability(_participants[i].abilityId, &_objects[_participants[i].playerUpdate.FrontPet]);
+        PetBattleAbility ability(_participants[i].abilityId, &_objects[_participants[i].playerUpdate.FrontPet], this, _participants[i].playerUpdate.FrontPet); // TODO: verify index of objects
         _abilities.push_back(ability);
     }
     
