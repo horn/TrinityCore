@@ -404,7 +404,7 @@ enum AuraType
     SPELL_AURA_MOD_AUTOATTACK_DAMAGE                        = 344,  // NYI
     SPELL_AURA_BYPASS_ARMOR_FOR_CASTER                      = 345,
     SPELL_AURA_ENABLE_ALT_POWER                             = 346,  // NYI
-    SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE                  = 347,  // NYI
+    SPELL_AURA_MOD_SPELL_COOLDOWN_BY_HASTE                  = 347,
     SPELL_AURA_DEPOSIT_BONUS_MONEY_IN_GUILD_BANK_ON_LOOT    = 348,
     SPELL_AURA_MOD_CURRENCY_GAIN                            = 349,
     SPELL_AURA_MOD_GATHERING_ITEMS_GAINED_PERCENT           = 350,  // NYI
@@ -437,7 +437,7 @@ enum AuraType
     SPELL_AURA_CAST_WHILE_WALKING_2                         = 377,  // NYI
     SPELL_AURA_378                                          = 378,
     SPELL_AURA_379                                          = 379,
-    SPELL_AURA_380                                          = 380,
+    SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE                 = 380,  // Allows melee abilities to benefit from haste GCD reduction
     SPELL_AURA_381                                          = 381,
     SPELL_AURA_MOD_PET_STAT_PCT                             = 382,  // NYI
     SPELL_AURA_IGNORE_SPELL_COOLDOWN                        = 383,  // NYI
@@ -473,8 +473,8 @@ enum AuraType
     SPELL_AURA_413                                          = 413,
     SPELL_AURA_414                                          = 414,
     SPELL_AURA_415                                          = 415,
-    SPELL_AURA_MOD_COOLDOWN_BY_HASTE_EFFECTS                = 416,  // NYI
-    SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE_EFFECTS         = 417,  // NYI
+    SPELL_AURA_MOD_COOLDOWN_BY_HASTE_REGEN                  = 416,
+    SPELL_AURA_MOD_GLOBAL_COOLDOWN_BY_HASTE_REGEN           = 417,
     SPELL_AURA_MOD_MAX_POWER                                = 418,  // NYI
     SPELL_AURA_MOD_BASE_MANA_PCT                            = 419,
     SPELL_AURA_MOD_BATTLE_PET_XP_PCT                        = 420,  // NYI
@@ -531,7 +531,7 @@ enum AuraType
     SPELL_AURA_472                                          = 472,
     SPELL_AURA_PREVENT_DURABILITY_LOSS_FROM_COMBAT          = 473, // Prevents durability loss from dealing/taking damage
     SPELL_AURA_474                                          = 474,
-    SPELL_AURA_475                                          = 475,
+    SPELL_AURA_ALLOW_USING_GAMEOBJECTS_WHILE_MOUNTED        = 475,
     SPELL_AURA_476                                          = 476,
     SPELL_AURA_477                                          = 477,
     SPELL_AURA_478                                          = 478,

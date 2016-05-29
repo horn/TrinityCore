@@ -513,6 +513,7 @@ namespace WorldPackets
         class PetAction;
         class PetCancelAura;
         class PetSetAction;
+        class LearnPetSpecializationGroup;
     }
 
     namespace Petition
@@ -1523,6 +1524,7 @@ class TC_GAME_API WorldSession
         void HandlePetCancelAuraOpcode(WorldPackets::Spells::PetCancelAura& packet);
         void HandlePetSpellAutocastOpcode(WorldPackets::Pet::PetSpellAutocast& packet);
         void HandlePetCastSpellOpcode(WorldPackets::Spells::PetCastSpell& petCastSpell);
+        void HandlePetSetSpecializationOpcode(WorldPackets::Pet::LearnPetSpecializationGroup& learnPetSpecializationGroup);
 
         void HandleSetActionBarToggles(WorldPackets::Character::SetActionBarToggles& packet);
 
