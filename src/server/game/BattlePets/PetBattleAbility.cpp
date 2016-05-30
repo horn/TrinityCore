@@ -85,32 +85,33 @@ PetBattleEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffe
 PetBattle::PetBattleObject* PetBattleAbility::GetEffectTarget(PetBattleAbilityEffectName const& effectId) const
 {
     uint8 index = 0;
+    bool participant = _casterId > PBOID_P0_PET_2 ? true : false;
 
     switch (GetEffectTargetName(effectId))
     {
         case TARGET_CASTER:
-            index = _casterId ? PBOID_P1_PET_0 : PBOID_P0_PET_0;
+            index = participant ? PBOID_P1_PET_0 : PBOID_P0_PET_0;
             break;
         case TARGET_CASTERS_TEAM_PET_1:
-            index = _casterId ? PBOID_P1_PET_1 : PBOID_P0_PET_1;
+            index = participant ? PBOID_P1_PET_1 : PBOID_P0_PET_1;
             break;
         case TARGET_CASTERS_TEAM_PET_2:
-            index = _casterId ? PBOID_P1_PET_2 : PBOID_P0_PET_2;
+            index = participant ? PBOID_P1_PET_2 : PBOID_P0_PET_2;
             break;
         case TARGET_CASTERS_TEAM_PAD:
-            index = _casterId ? PBOID_PAD_1 : PBOID_PAD_0;
+            index = participant ? PBOID_PAD_1 : PBOID_PAD_0;
             break;
         case TARGET_ENEMY:
-            index = _casterId ? PBOID_P0_PET_0 : PBOID_P1_PET_0;
+            index = participant ? PBOID_P0_PET_0 : PBOID_P1_PET_0;
             break;
         case TARGET_ENEMYS_TEAM_PET_1:
             index = _casterId ? PBOID_P0_PET_1 : PBOID_P1_PET_1;
             break;
         case TARGET_ENEMYS_TEAM_PET_2:
-            index = _casterId ? PBOID_P0_PET_2 : PBOID_P1_PET_2;
+            index = participant ? PBOID_P0_PET_2 : PBOID_P1_PET_2;
             break;
         case TARGET_ENEMYS_TEAM_PAD:
-            index = _casterId ? PBOID_PAD_0 : PBOID_PAD_1;
+            index = participant ? PBOID_PAD_0 : PBOID_PAD_1;
             break;
         case TARGET_WEATHER:
             index = PBOID_WEATHER;
@@ -158,7 +159,7 @@ void PetBattleAbility::ProcessProc(PetBattleAbilityProcType procType)
 void PetBattleAbility::EffectNULL(BattlePetAbilityEffectEntry const* effect)
 {
     // TODO: print effect name instead of number
-    TC_LOG_ERROR("server.fixthisstring", "Received battle pet ability %s (ID: %u) with unhandled effect %u", _ability->Name, GetId(), effect->EffectPropertiesID);
+    TC_LOG_ERROR("server.fixthisstring", "Received battle pet ability %s (ID: %u) with unhandled effect %u", _ability->Name->Str[LOCALE_enUS], GetId(), effect->EffectPropertiesID);
 }
 
 void PetBattleAbility::EffectUnused(BattlePetAbilityEffectEntry const* /*effect*/)

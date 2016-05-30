@@ -37,11 +37,11 @@ enum PBOIDNames
 // custom names, can't find them in client
 enum PetBattleMoveType
 {
-    PETBATTLE_MOVE_TYPE_UNK1    = 0, // forfeit, sent together with CMSG_PET_BATTLE_QUIT_NOTIFY
-    PETBATTLE_MOVE_ABILITY      = 1,
-    PETBATTLE_MOVE_PET_SWAP     = 2, // swap pet and pass round
-    PETBATTLE_MOVE_CAGE         = 3,
-    PETBATTLE_MOVE_TYPE_UNK3    = 4  // battle end after SMSG_PET_BATTLE_FINAL_ROUND, sent together with CMSG_PET_BATTLE_FINAL_NOTIFY
+    PETBATTLE_MOVE_REQUEST_LEAVE = 0, // forfeit, sent together with CMSG_PET_BATTLE_QUIT_NOTIFY
+    PETBATTLE_MOVE_ABILITY       = 1,
+    PETBATTLE_MOVE_PET_SWAP      = 2, // swap pet and pass round
+    PETBATTLE_MOVE_CAGE          = 3,
+    PETBATTLE_MOVE_LEAVE_BATTLE  = 4  // battle end after SMSG_PET_BATTLE_FINAL_ROUND, sent together with CMSG_PET_BATTLE_FINAL_NOTIFY
 };
 
 class PetBattleAbility;
@@ -97,7 +97,7 @@ public:
 
 private:
     Participant _participants[2];
-    PetBattleObject _objects[PBOID_INVALID];
+    std::array<PetBattleObject, PBOID_INVALID> _objects;
     std::list<PetBattleAbility> _abilities;
 
     WorldPackets::BattlePet::LocationInfo _locationInfo;

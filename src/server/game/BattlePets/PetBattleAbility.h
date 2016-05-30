@@ -163,11 +163,12 @@ PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
 class PetBattleAbility
 {
 public:
-    PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster, PetBattle* parentBattle, uint8 casterId) :
-        _caster(caster), _parentBattle(parentBattle), _casterId(casterId)
+    PetBattleAbility(uint32 abilityId, uint8 casterId, PetBattle* parentBattle) : _parentBattle(parentBattle), _casterId(casterId)
     {
         _ability = sBattlePetAbilityStore.LookupEntry(abilityId);
+        _caster = parentBattle->GetPetBattleObject(PBOIDNames(casterId));
         ASSERT(_ability);
+        ASSERT(_caster);
     }
 
     friend class PetBattle;
