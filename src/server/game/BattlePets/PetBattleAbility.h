@@ -164,11 +164,15 @@ class PetBattleAbility
 {
 public:
     PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster, PetBattle* parentBattle, uint8 casterId) :
-        _caster(caster), _parentBattle(parentBattle), _abilityId(abilityId), _casterId(casterId) { }
+        _caster(caster), _parentBattle(parentBattle), _casterId(casterId)
+    {
+        _ability = sBattlePetAbilityStore.LookupEntry(abilityId);
+        ASSERT(_ability);
+    }
 
     friend class PetBattle;
 
-    uint32 GetId() const { return _abilityId; }
+    uint32 GetId() const { return _ability->ID; }
 
     PetBattle::PetBattleObject* GetCaster() { return _caster; }
     PetBattleEffectTarget GetEffectTargetName(PetBattleAbilityEffectName const& effect) const;
@@ -179,15 +183,15 @@ public:
     void ProcessEffects();
     void ProcessProc(PetBattleAbilityProcType procType);
 
-    void EffectNULL(PetBattle::PetBattleObject* effectTarget);
-    void EffectUnused(PetBattle::PetBattleObject* effectTarget);
-    void EffectHeal(PetBattle::PetBattleObject* effectTarget);
-    void EffectDealDamage(PetBattle::PetBattleObject* effectTarget);
+    void EffectNULL(BattlePetAbilityEffectEntry const* effect);
+    void EffectUnused(BattlePetAbilityEffectEntry const* effect);
+    void EffectHeal(BattlePetAbilityEffectEntry const* effect);
+    void EffectDealDamage(BattlePetAbilityEffectEntry const* effect);
 
 private:
     PetBattle::PetBattleObject* _caster = nullptr;
+    BattlePetAbilityEntry const* _ability = nullptr;
     PetBattle* _parentBattle;
-    uint32 _abilityId = 0; // or BattlePetAbilityEntry const* instead
     uint8 _round = 0;
     uint8 _casterId;
 
@@ -196,7 +200,7 @@ private:
         PetBattleEffectType type;
         PetBattleEffectTarget implicitTarget;
         // TODO: handler will need access to more stuff (effectID, properties...) -> waiting for containerception of DB2Stores
-        void(PetBattleAbility::*handler)(PetBattle::PetBattleObject*);
+        void(PetBattleAbility::*handler)(BattlePetAbilityEffectEntry const*);
     };
     static std::unordered_map<PetBattleAbilityEffectName, EffectTypeInfo> _effectTypesInfo;
     static std::unordered_map<uint32 /*abilityId*/, std::set<BattlePetAbilityTurnEntry const*>> _abilityTurnsByAbility; // TODO: getter here or move to singleton

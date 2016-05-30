@@ -74,6 +74,7 @@ void PetBattleAbility::LoadAbilities()
 
 PetBattleEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffectName const& effect) const
 {
+    // TODO: if explicit target exists (from DB), use it, otherwise use implicit target
     for (auto const& item : _effectTypesInfo)
         if (item.first == effect)
             return item.second.implicitTarget;
@@ -124,18 +125,13 @@ PetBattle::PetBattleObject* PetBattleAbility::GetEffectTarget(PetBattleAbilityEf
 
 void PetBattleAbility::ProcessEffects()
 {
-    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])
+    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[GetId()])
     {
         if (turnEntry->Turn == _round)
         {
             for (BattlePetAbilityEffectEntry const* effectEntry : _abilityEffectsByTurn[turnEntry->ID])
             {
-                // TODO: get BattlePetObject* target
-                //       if explicit target exists (from DB), use it
-                //       otherwise use implicit target
-                PetBattle::PetBattleObject* target = GetEffectTarget(PetBattleAbilityEffectName(effectEntry->EffectPropertiesID));
-
-                (this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(target);
+                (this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(effectEntry);
 
                 // TODO: generate PetBattleEffect and PetBattleEffectTarget properly and append them to PetBattle::_roundResult
                 /*WorldPackets::BattlePet::PetBattleEffect eff;
@@ -151,7 +147,7 @@ void PetBattleAbility::ProcessEffects()
 
 void PetBattleAbility::ProcessProc(PetBattleAbilityProcType procType)
 {
-    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[_abilityId])
+    for (BattlePetAbilityTurnEntry const* turnEntry : _abilityTurnsByAbility[GetId()])
         if (turnEntry->HasProcType && turnEntry->ProcType == procType)
             for (BattlePetAbilityEffectEntry const* effectEntry : _abilityEffectsByTurn[turnEntry->ID])
             {
@@ -159,22 +155,31 @@ void PetBattleAbility::ProcessProc(PetBattleAbilityProcType procType)
             }
 }
 
-void PetBattleAbility::EffectNULL(PetBattle::PetBattleObject* /*effectTarget*/)
+void PetBattleAbility::EffectNULL(BattlePetAbilityEffectEntry const* effect)
 {
-    //TC_LOG_ERROR("server.dunno", "Received battle pet ability %s (ID: %u) with unhandled effect %s", _abilityInfo->Name, _abilityInfo->ID, currentEffect->name);
+    // TODO: print effect name instead of number
+    TC_LOG_ERROR("server.fixthisstring", "Received battle pet ability %s (ID: %u) with unhandled effect %u", _ability->Name, GetId(), effect->EffectPropertiesID);
 }
 
-void PetBattleAbility::EffectUnused(PetBattle::PetBattleObject* /*effectTarget*/)
+void PetBattleAbility::EffectUnused(BattlePetAbilityEffectEntry const* /*effect*/)
 {
 
 }
 
-void PetBattleAbility::EffectHeal(PetBattle::PetBattleObject* effectTarget)
+void PetBattleAbility::EffectHeal(BattlePetAbilityEffectEntry const* effect)
 {
-    //_caster->DealHeal(effectTarget, currentEffect->points);
+    PetBattle::PetBattleObject* target = GetEffectTarget(PetBattleAbilityEffectName(effect->EffectPropertiesID));
+    if (!target)
+        return;
+
+    _caster->DealHeal(target, effect->PropertyValue[0]); // TODO: Maybe convert properties to structs or associative map
 }
 
-void PetBattleAbility::EffectDealDamage(PetBattle::PetBattleObject* effectTarget)
+void PetBattleAbility::EffectDealDamage(BattlePetAbilityEffectEntry const* effect)
 {
-    //_caster->DealDamage(effectTarget, currentEffect->points); // points modified by power and stuff
+    PetBattle::PetBattleObject* target = GetEffectTarget(PetBattleAbilityEffectName(effect->EffectPropertiesID));
+    if (!target)
+        return;
+
+    _caster->DealDamage(target, effect->PropertyValue[0]);
 }
