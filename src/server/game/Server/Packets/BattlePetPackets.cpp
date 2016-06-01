@@ -414,31 +414,34 @@ ByteBuffer& operator<<(ByteBuffer& data, WorldPackets::BattlePet::RoundResult co
             switch (target.Type)
             {
                 case PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE:
-                    data << int32(target.BroadcastTextID);
+                    data << int32(target.Params.BroadcastTextID);
                     break;                
                 case PET_BATTLE_EFFECT_TARGET_EX_AURA:
-                    data << int32(target.AuraInstanceID);
-                    data << int32(target.AuraAbilityID);
-                    data << int32(target.RoundsRemaining);
-                    data << int32(target.CurrentRound);
+                    data << int32(target.Params.Aura.AuraInstanceID);
+                    data << int32(target.Params.Aura.AuraAbilityID);
+                    data << int32(target.Params.Aura.RoundsRemaining);
+                    data << int32(target.Params.Aura.CurrentRound);
                     break;
                 case PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE:
-                    data << int32(target.NewStatValue);
+                    data << int32(target.Params.NewStatValue);
                     break;
                 case PET_BATTLE_EFFECT_TARGET_EX_PET:
-                    data << int32(target.Health);
+                    data << int32(target.Params.Health);
                     break;
                 case PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE:
-                    data << int32(target.ChangedAbilityID);
-                    data << int32(target.CooldownRemaining);
-                    data << int32(target.LockdownRemaining);
+                    data << int32(target.Params.AbilityChange.ChangedAbilityID);
+                    data << int32(target.Params.AbilityChange.CooldownRemaining);
+                    data << int32(target.Params.AbilityChange.LockdownRemaining);
                     break;
                 case PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY:
-                    data << int32(target.TriggerAbilityID);
+                    data << int32(target.Params.TriggerAbilityID);
                     break;
                 case PET_BATTLE_EFFECT_TARGET_EX_STATE:
-                    data << int32(target.StateID);
-                    data << int32(target.StateValue);
+                    data << int32(target.Params.State.StateID);
+                    data << int32(target.Params.State.StateValue);
+                    break;
+                case PET_BATTLE_EFFECT_TARGET_EX_NONE:
+                default:
                     break;
             }
         }

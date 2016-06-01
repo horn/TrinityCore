@@ -58,8 +58,8 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
 
     _locationInfo = locationInfo; // TODO: verify location, cancel battle in case of invalid location etc.
 
-    _participants[0].player = player;
-    _participants[0].playerUpdate = GetPlayerUpdateInfo(player, PBOID); // TODO: each player must have at least one battle pet in slot
+    _participants[CHALLENGER].player = player;
+    _participants[CHALLENGER].playerUpdate = GetPlayerUpdateInfo(player, PBOID); // TODO: each player must have at least one battle pet in slot
     player->GetSession()->GetBattlePetJournal()->SetPetBattle(this);
 
     PBOID = PBOID_P1_PET_0;
@@ -69,8 +69,8 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
         // CMSG_PET_BATTLE_REQUEST_PVP (battle pet duel) or Find Battle
         if (Player* opponent = ObjectAccessor::FindPlayer(target))
         {
-            _participants[1].player = opponent;
-            _participants[1].playerUpdate = GetPlayerUpdateInfo(opponent, PBOID);
+            _participants[OPPONENT].player = opponent;
+            _participants[OPPONENT].playerUpdate = GetPlayerUpdateInfo(opponent, PBOID);
             opponent->GetSession()->GetBattlePetJournal()->SetPetBattle(this);
         }
 
@@ -86,8 +86,8 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
         // find out what to do with BattlePetNPCTeamMember.db2
         if (Creature* wildPet = ObjectAccessor::GetCreature(*player, target))
         {
-            _participants[1].creature = wildPet;
-            _participants[1].playerUpdate = GetCreatureUpdateInfo(wildPet, PBOID);
+            _participants[OPPONENT].creature = wildPet;
+            _participants[OPPONENT].playerUpdate = GetCreatureUpdateInfo(wildPet, PBOID);
         }
 
         _forfeitPenalty = 10;
@@ -96,10 +96,10 @@ PetBattle::PetBattle(Player* player, ObjectGuid target, WorldPackets::BattlePet:
 
 PetBattle::~PetBattle()
 {
-    _participants[0].player->GetSession()->GetBattlePetJournal()->SetPetBattle(nullptr);
+    _participants[CHALLENGER].player->GetSession()->GetBattlePetJournal()->SetPetBattle(nullptr);
 
     if (_isPvP)
-        _participants[1].player->GetSession()->GetBattlePetJournal()->SetPetBattle(nullptr);
+        _participants[OPPONENT].player->GetSession()->GetBattlePetJournal()->SetPetBattle(nullptr);
 }
 
 WorldPackets::BattlePet::PlayerUpdate PetBattle::GetPlayerUpdateInfo(Player* player, uint8& PBOID)
@@ -187,7 +187,7 @@ void PetBattle::StartBattle()
 
     WorldPackets::BattlePet::PetBattleInitialUpdate init;
 
-    for (uint8 i = 0; i < (_isPvP ? 2 : 1); ++i)
+    for (uint8 i = 0; i < (_isPvP ? PARTICIPANTS_COUNT : OPPONENT); ++i)
     {
         _participants[i].player->Dismount();
         // set pacified and disable move flags
@@ -220,9 +220,9 @@ void PetBattle::EndBattle(uint8 winner, bool forfeit)
     finalRound.Winners[winner] = true;
 
     if (!_isPvP)
-        finalRound.NpcCreatureID[1] = _participants[1].creature->GetEntry(); // really? why NpcCreatureID[0] would be here?
+        finalRound.NpcCreatureID[1] = _participants[OPPONENT].creature->GetEntry(); // really? why NpcCreatureID[0] would be here?
 
-    for (uint8 i = 0; i < 2; ++i)
+    for (uint8 i = 0; i < PARTICIPANTS_COUNT; ++i)
     {
         uint8 PBOID = 0;
 
@@ -249,7 +249,7 @@ void PetBattle::EndBattle(uint8 winner, bool forfeit)
 
 void PetBattle::Update(uint32 diff)
 {
-    for (uint8 i = 0; i < 2; ++i)
+    for (uint8 i = 0; i < PARTICIPANTS_COUNT; ++i)
     {
         // TODO: pve battles don't have limited time
         if (_participants[i].roundTime <= diff)
@@ -258,13 +258,13 @@ void PetBattle::Update(uint32 diff)
             _participants[i].roundTime -= diff;
     }
 
-    if (_participants[0].roundCompleted && _participants[1].roundCompleted)
+    if (_participants[CHALLENGER].roundCompleted && _participants[OPPONENT].roundCompleted)
     {
         ProcessRound();
 
         // TODO: handle round and battle endings
 
-        for (uint8 i = 0; i < 2; ++i)
+        for (uint8 i = 0; i < PARTICIPANTS_COUNT; ++i)
         {
             // move to EndRound() maybe
             // TODO: reduce round time based on inactivity
@@ -280,9 +280,9 @@ void PetBattle::Update(uint32 diff)
 void PetBattle::ProcessRound()
 {
     // First of all, create abilities casted this turn - can be moved to PetBattle::UseAbility() with proper checks
-    for (uint8 i = 0; i < 2; ++i)
+    for (uint8 i = 0; i < PARTICIPANTS_COUNT; ++i)
     {
-        PetBattleAbility ability(_participants[i].abilityId, 3 * i + _participants[i].playerUpdate.FrontPet, this); // TODO: verify index of objects
+        PetBattleAbility ability(_participants[i].abilityId, &_objects[3 * i + _participants[i].playerUpdate.FrontPet], this);
         _abilities.push_back(ability);
     }
     
@@ -296,9 +296,13 @@ void PetBattle::ProcessRound()
     // Sort pets (or all battle objects?) based on speed
     // Cast effects in correct order
 
-    // append PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN
-    // Process auras
-    // append PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END
+    WorldPackets::BattlePet::PetBattleEffect* eff = AddEffect(PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN);
+    AddEffectTarget(eff);
+
+    // TODO: Process auras
+
+    eff = AddEffect(PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END);
+    AddEffectTarget(eff);
 
     // In the end, process ability turns with PET_BATTLE_EVENT_ON_ROUND_END (not only auras have it)
     for (PetBattleAbility ability : _abilities)
@@ -311,11 +315,11 @@ void PetBattle::ProcessRound()
 
 void PetBattle::EndRound()
 {
-    if (!_participants[0].roundCompleted || !_participants[1].roundCompleted)
+    if (!_participants[CHALLENGER].roundCompleted || !_participants[OPPONENT].roundCompleted)
         return;
 
-    _roundResult.RoundTimeSecs[0] = _participants[0].playerUpdate.RoundTimeSecs;
-    _roundResult.RoundTimeSecs[1] = _participants[1].playerUpdate.RoundTimeSecs;
+    _roundResult.RoundTimeSecs[CHALLENGER] = _participants[CHALLENGER].playerUpdate.RoundTimeSecs;
+    _roundResult.RoundTimeSecs[OPPONENT] = _participants[OPPONENT].playerUpdate.RoundTimeSecs;
     _roundResult.CurRound = _round;
 
     if (!_round)
@@ -332,40 +336,34 @@ void PetBattle::EndRound()
     }
 
     _roundResult = WorldPackets::BattlePet::RoundResult(); // reset round result
-    _participants[0].roundCompleted = false;
-    _participants[1].roundCompleted = false;
+    _participants[CHALLENGER].roundCompleted = false;
+    _participants[OPPONENT].roundCompleted = false;
     _round++;
 }
 
 void PetBattle::SwapPet(Player* player, uint8 frontPet)
 {
-    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
+    uint8 playerId = (player == _participants[CHALLENGER].player) ? CHALLENGER : OPPONENT;
 
     if (_participants[playerId].roundCompleted)
         return;
 
     _roundResult.NextPetBattleState = 2;
 
-    WorldPackets::BattlePet::PetBattleEffect eff;
-    eff.PetBattleEffectType = PETBATTLE_EFFECT_TYPE_PET_SWAP;
-    WorldPackets::BattlePet::PetBattleEffectTarget tar;
-    tar.Type = PET_BATTLE_EFFECT_TARGET_EX_NONE;
-    tar.Petx = (playerId ? PBOID_P1_PET_0 : PBOID_P0_PET_0) + frontPet; // "second" player's pboid starts at 3
-    eff.Targets.push_back(tar);
-    eff.CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar.Petx; // on first round, caster is the same as target
+    WorldPackets::BattlePet::PetBattleEffect* eff = AddEffect(PETBATTLE_EFFECT_TYPE_PET_SWAP);
+    WorldPackets::BattlePet::PetBattleEffectTarget* tar = AddEffectTarget(eff, &_objects[3 * playerId + frontPet]); // "second" player's pboid starts at 3
+    eff->CasterPBOID = _round ? _participants[playerId].playerUpdate.FrontPet : tar->Petx; // on first round, caster is the same as target
 
-    if (_round && tar.Petx == _participants[playerId].playerUpdate.FrontPet) // pass round
-        eff.Flags = 1; // this flag makes battle pet log not displaying "X is now your active pet"
+    if (_round && tar->Petx == _participants[playerId].playerUpdate.FrontPet) // pass round
+        eff->Flags = 1; // this flag makes battle pet log not displaying "X is now your active pet"
 
-    _participants[playerId].playerUpdate.FrontPet = tar.Petx; // not sure if we can store it here
-    _roundResult.Effects.push_back(eff);
-
+    _participants[playerId].playerUpdate.FrontPet = tar->Petx; // not sure if we can store it here
     _participants[playerId].roundCompleted = true;
 }
 
 void PetBattle::ForfeitBattle(Player* player)
 {
-    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
+    uint8 playerId = (player == _participants[CHALLENGER].player) ? CHALLENGER : OPPONENT;
 
     if (_participants[playerId].roundCompleted)
         return; // TODO: in this case we should probably remember that player wants to forfeit battle and do it in next round instead of ignoring it
@@ -375,7 +373,7 @@ void PetBattle::ForfeitBattle(Player* player)
 
 void PetBattle::UseAbility(Player* player, uint32 ability)
 {
-    uint8 playerId = (player == _participants[0].player) ? 0 : 1;
+    uint8 playerId = (player == _participants[CHALLENGER].player) ? CHALLENGER : OPPONENT;
 
     if (_participants[playerId].roundCompleted)
         return;
@@ -385,11 +383,78 @@ void PetBattle::UseAbility(Player* player, uint32 ability)
     _participants[playerId].roundCompleted = true;
 }
 
+WorldPackets::BattlePet::PetBattleEffect* PetBattle::AddEffect(PetBattleEffectType type, PetBattleObject* caster, uint32 effectId, uint16 flags, uint16 sourceAuraInstanceId, uint16 turnInstanceId, uint8 stackDepth)
+{
+    WorldPackets::BattlePet::PetBattleEffect eff;
+    eff.AbilityEffectID = effectId;
+    eff.Flags = flags;
+    eff.SourceAuraInstanceID = sourceAuraInstanceId;
+    eff.TurnInstanceID = turnInstanceId;
+    eff.PetBattleEffectType = type;
+    eff.CasterPBOID = GetPetBattleObjectId(caster);
+
+    _roundResult.Effects.push_back(eff);
+    return &_roundResult.Effects.back();
+}
+
+WorldPackets::BattlePet::PetBattleEffectTarget* PetBattle::AddEffectTarget(WorldPackets::BattlePet::PetBattleEffect* effect, PetBattleObject* target, int32 param0, int32 param1, int32 param2, int32 param3)
+{
+    WorldPackets::BattlePet::PetBattleEffectTarget tar;
+    tar.Type = targetExByType[effect->PetBattleEffectType];
+    tar.Petx = GetPetBattleObjectId(target);
+
+    switch (tar.Type)
+    {
+        case PET_BATTLE_EFFECT_TARGET_EX_AURA:
+            tar.Params.Aura.AuraAbilityID = param0;
+            tar.Params.Aura.AuraInstanceID = param1;
+            tar.Params.Aura.CurrentRound = param2;
+            tar.Params.Aura.RoundsRemaining = param3;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_STATE:
+            tar.Params.State.StateID = param0;
+            tar.Params.State.StateValue = param1;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_PET:
+            tar.Params.Health = param0;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE:
+            tar.Params.NewStatValue = param0;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY:
+            tar.Params.TriggerAbilityID = param0;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE:
+            tar.Params.AbilityChange.ChangedAbilityID = param0;
+            tar.Params.AbilityChange.CooldownRemaining = param1;
+            tar.Params.AbilityChange.LockdownRemaining = param2;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE:
+            tar.Params.BroadcastTextID = param0;
+            break;
+        case PET_BATTLE_EFFECT_TARGET_EX_NONE:
+        default:
+            break;
+    }
+
+    effect->Targets.push_back(tar);
+    return &effect->Targets.back();
+}
+
+PBOIDNames PetBattle::GetPetBattleObjectId(PetBattleObject* object)
+{
+    for (uint8 i = 0; i < PBOID_INVALID; ++i)
+        if (&_objects[i] == object)
+            return PBOIDNames(i);
+
+    return PBOID_INVALID;
+}
+
 void PetBattle::NotifyParticipants(const WorldPacket* packet)
 {
     // some checks needed?
-    _participants[0].player->GetSession()->SendPacket(packet);
+    _participants[CHALLENGER].player->GetSession()->SendPacket(packet);
 
     if (_isPvP)
-        _participants[1].player->GetSession()->SendPacket(packet);
+        _participants[OPPONENT].player->GetSession()->SendPacket(packet);
 }

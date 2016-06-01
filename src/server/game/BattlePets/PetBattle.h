@@ -20,6 +20,14 @@
 
 #include "BattlePetPackets.h"
 
+enum ParticipantId
+{
+    CHALLENGER          = 0,
+    OPPONENT            = 1,
+
+    PARTICIPANTS_COUNT  = 2
+};
+
 enum PBOIDNames
 {
     PBOID_P0_PET_0  = 0,
@@ -42,6 +50,58 @@ enum PetBattleMoveType
     PETBATTLE_MOVE_PET_SWAP      = 2, // swap pet and pass round
     PETBATTLE_MOVE_CAGE          = 3,
     PETBATTLE_MOVE_LEAVE_BATTLE  = 4  // battle end after SMSG_PET_BATTLE_FINAL_ROUND, sent together with CMSG_PET_BATTLE_FINAL_NOTIFY
+};
+
+enum PetBattleEffectType
+{
+    PETBATTLE_EFFECT_TYPE_SET_HEALTH            = 0,  // PET_BATTLE_EFFECT_TARGET_EX_PET
+    PETBATTLE_EFFECT_TYPE_AURA_APPLY            = 1,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
+    PETBATTLE_EFFECT_TYPE_AURA_CANCEL           = 2,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
+    PETBATTLE_EFFECT_TYPE_AURA_CHANGE           = 3,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
+    PETBATTLE_EFFECT_TYPE_PET_SWAP              = 4,  // PET_BATTLE_EFFECT_TARGET_EX_NONE
+    PETBATTLE_EFFECT_TYPE_STATUS_CHANGE         = 5,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
+    PETBATTLE_EFFECT_TYPE_SET_STATE             = 6,  // PET_BATTLE_EFFECT_TARGET_EX_STATE
+    PETBATTLE_EFFECT_TYPE_SET_MAX_HEALTH        = 7,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
+    PETBATTLE_EFFECT_TYPE_SET_SPEED             = 8,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
+    PETBATTLE_EFFECT_TYPE_SET_POWER             = 9,  // no idea which spells could use that
+    PETBATTLE_EFFECT_TYPE_TRIGGER_ABILITY       = 10, // PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY
+    PETBATTLE_EFFECT_TYPE_ABILITY_CHANGE        = 11, // probably for Dark Simulacrum which no longer exists
+    PETBATTLE_EFFECT_TYPE_NPC_EMOTE             = 12, // PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE
+    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN = 13, // PET_BATTLE_EFFECT_TARGET_EX_NONE
+    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END   = 14, // PET_BATTLE_EFFECT_TARGET_EX_NONE
+    PETBATTLE_EFFECT_TYPE_INVALID               = 15  // not sure about the value
+};
+
+// 6.2.4
+enum PetBattleEffectTargetEx
+{
+    PET_BATTLE_EFFECT_TARGET_EX_NONE            = 0,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA            = 1,
+    PET_BATTLE_EFFECT_TARGET_EX_STATE           = 2,
+    PET_BATTLE_EFFECT_TARGET_EX_PET             = 3, // ?
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE     = 4,
+    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY = 5,
+    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE  = 6,
+    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE       = 7
+};
+
+PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
+{
+    PET_BATTLE_EFFECT_TARGET_EX_PET,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_AURA,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STATE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
+    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,     // not verified
+    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY,
+    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE,  // not verified
+    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE,
+    PET_BATTLE_EFFECT_TARGET_EX_NONE
 };
 
 class PetBattleAbility;
@@ -88,7 +148,11 @@ public:
     void ForfeitBattle(Player* player);
     void UseAbility(Player* player, uint32 ability);
 
+    WorldPackets::BattlePet::PetBattleEffect* AddEffect(PetBattleEffectType type, PetBattleObject* caster = nullptr, uint32 effectId = 0, uint16 flags = 0, uint16 sourceAuraInstanceId = 0, uint16 turnInstanceId = 0, uint8 stackDepth = 0);
+    WorldPackets::BattlePet::PetBattleEffectTarget* AddEffectTarget(WorldPackets::BattlePet::PetBattleEffect* effect, PetBattleObject* target = nullptr, int32 param0 = 0, int32 param1 = 0, int32 param2 = 0, int32 param3 = 0);
+
     PetBattleObject* GetPetBattleObject(PBOIDNames pboid) { return &_objects[pboid]; }
+    PBOIDNames GetPetBattleObjectId(PetBattleObject* object);
 
     WorldPackets::BattlePet::LocationInfo GetLocationInfo() const { return _locationInfo; }
     uint8 GetForfeitPenalty() const { return _forfeitPenalty; }

@@ -72,7 +72,7 @@ void PetBattleAbility::LoadAbilities()
     }
 }
 
-PetBattleEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffectName const& effect) const
+PetBattleAbilityEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffectName const& effect) const
 {
     // TODO: if explicit target exists (from DB), use it, otherwise use implicit target
     for (auto const& item : _effectTypesInfo)
@@ -84,34 +84,34 @@ PetBattleEffectTarget PetBattleAbility::GetEffectTargetName(PetBattleAbilityEffe
 
 PetBattle::PetBattleObject* PetBattleAbility::GetEffectTarget(PetBattleAbilityEffectName const& effectId) const
 {
-    uint8 index = 0;
-    bool participant = _casterId > PBOID_P0_PET_2 ? true : false;
+    uint8 index = PBOID_INVALID;
+    bool challenger = _battle->GetPetBattleObjectId(_caster) < PBOID_P0_PET_2;
 
     switch (GetEffectTargetName(effectId))
     {
         case TARGET_CASTER:
-            index = participant ? PBOID_P1_PET_0 : PBOID_P0_PET_0;
+            index = challenger ? PBOID_P1_PET_0 : PBOID_P0_PET_0;
             break;
         case TARGET_CASTERS_TEAM_PET_1:
-            index = participant ? PBOID_P1_PET_1 : PBOID_P0_PET_1;
+            index = challenger ? PBOID_P1_PET_1 : PBOID_P0_PET_1;
             break;
         case TARGET_CASTERS_TEAM_PET_2:
-            index = participant ? PBOID_P1_PET_2 : PBOID_P0_PET_2;
+            index = challenger ? PBOID_P1_PET_2 : PBOID_P0_PET_2;
             break;
         case TARGET_CASTERS_TEAM_PAD:
-            index = participant ? PBOID_PAD_1 : PBOID_PAD_0;
+            index = challenger ? PBOID_PAD_1 : PBOID_PAD_0;
             break;
         case TARGET_ENEMY:
-            index = participant ? PBOID_P0_PET_0 : PBOID_P1_PET_0;
+            index = challenger ? PBOID_P0_PET_0 : PBOID_P1_PET_0;
             break;
         case TARGET_ENEMYS_TEAM_PET_1:
-            index = _casterId ? PBOID_P0_PET_1 : PBOID_P1_PET_1;
+            index = challenger ? PBOID_P0_PET_1 : PBOID_P1_PET_1;
             break;
         case TARGET_ENEMYS_TEAM_PET_2:
-            index = participant ? PBOID_P0_PET_2 : PBOID_P1_PET_2;
+            index = challenger ? PBOID_P0_PET_2 : PBOID_P1_PET_2;
             break;
         case TARGET_ENEMYS_TEAM_PAD:
-            index = participant ? PBOID_PAD_0 : PBOID_PAD_1;
+            index = challenger ? PBOID_PAD_0 : PBOID_PAD_1;
             break;
         case TARGET_WEATHER:
             index = PBOID_WEATHER;
@@ -121,7 +121,7 @@ PetBattle::PetBattleObject* PetBattleAbility::GetEffectTarget(PetBattleAbilityEf
             return nullptr;
     }
 
-    return _parentBattle->GetPetBattleObject(PBOIDNames(index));
+    return _battle->GetPetBattleObject(PBOIDNames(index));
 }
 
 void PetBattleAbility::ProcessEffects()
@@ -134,11 +134,9 @@ void PetBattleAbility::ProcessEffects()
             {
                 (this->*_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].handler)(effectEntry);
 
-                // TODO: generate PetBattleEffect and PetBattleEffectTarget properly and append them to PetBattle::_roundResult
-                /*WorldPackets::BattlePet::PetBattleEffect eff;
-                eff.PetBattleEffectType = _effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].type;
-                WorldPackets::BattlePet::PetBattleEffectTarget effTarget;
-                effTarget.stuff = values;*/
+                // TODO: Set params of both functions properly, also these calls seems too much complicated, simplify if possible
+                WorldPackets::BattlePet::PetBattleEffect* eff = _battle->AddEffect(_effectTypesInfo[PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)].type, _caster, effectEntry->ID);
+                _battle->AddEffectTarget(eff, GetEffectTarget(PetBattleAbilityEffectName(effectEntry->EffectPropertiesID)));
             }
 
             break;
@@ -159,7 +157,7 @@ void PetBattleAbility::ProcessProc(PetBattleAbilityProcType procType)
 void PetBattleAbility::EffectNULL(BattlePetAbilityEffectEntry const* effect)
 {
     // TODO: print effect name instead of number
-    TC_LOG_ERROR("server.fixthisstring", "Received battle pet ability %s (ID: %u) with unhandled effect %u", _ability->Name->Str[LOCALE_enUS], GetId(), effect->EffectPropertiesID);
+    TC_LOG_ERROR("server.fixthisstring", "Received battle pet ability %s (ID: %u) with unhandled effect %u", _ability->Name->Str[DEFAULT_LOCALE], GetId(), effect->EffectPropertiesID);
 }
 
 void PetBattleAbility::EffectUnused(BattlePetAbilityEffectEntry const* /*effect*/)

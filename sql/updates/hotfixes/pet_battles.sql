@@ -1,7 +1,3 @@
-ALTER TABLE `battle_pet_species_locale`
-  CHANGE COLUMN `SourceText` `SourceText_lang` text,
-  CHANGE COLUMN `Description` `Description_lang` text;
-
 --
 -- Table structure for table `battle_pet_ability`
 --

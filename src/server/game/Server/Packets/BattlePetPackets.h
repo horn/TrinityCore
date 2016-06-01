@@ -386,19 +386,40 @@ namespace WorldPackets
         {
             uint8 Type = 0;
             uint8 Petx = 0;
-            uint32 AuraInstanceID = 0;
-            uint32 AuraAbilityID = 0;
-            int32 RoundsRemaining = 0;
-            int32 CurrentRound = 0;
-            uint32 StateID = 0;
-            int32 StateValue = 0;
-            int32 Health = 0;
-            int32 NewStatValue = 0;
-            int32 TriggerAbilityID = 0;
-            int32 ChangedAbilityID = 0;
-            int32 CooldownRemaining = 0;
-            int32 LockdownRemaining = 0;
-            int32 BroadcastTextID = 0;
+
+            union TargetParams
+            {
+                TargetParams() { }
+
+                struct
+                {
+                    uint32 AuraInstanceID = 0;
+                    uint32 AuraAbilityID = 0;
+                    int32 RoundsRemaining = 0;
+                    int32 CurrentRound = 0;
+                } Aura;
+
+                struct
+                {
+                    uint32 StateID = 0;
+                    int32 StateValue = 0;
+                } State;
+
+                int32 Health;
+
+                int32 NewStatValue;
+
+                int32 TriggerAbilityID;
+
+                struct
+                {
+                    int32 ChangedAbilityID = 0;
+                    int32 CooldownRemaining = 0;
+                    int32 LockdownRemaining = 0;
+                } AbilityChange;
+
+                int32 BroadcastTextID;
+            } Params;
         };
 
         struct PetBattleEffect

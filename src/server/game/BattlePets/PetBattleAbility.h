@@ -94,7 +94,7 @@ enum PetBattleAbilityEffectName
 };
 
 // custom
-enum PetBattleEffectTarget
+enum PetBattleAbilityEffectTarget
 {
     TARGET_NONE,
     TARGET_CASTER,
@@ -108,67 +108,15 @@ enum PetBattleEffectTarget
     TARGET_WEATHER
 };
 
-enum PetBattleEffectType
-{
-    PETBATTLE_EFFECT_TYPE_SET_HEALTH            = 0,  // PET_BATTLE_EFFECT_TARGET_EX_PET
-    PETBATTLE_EFFECT_TYPE_AURA_APPLY            = 1,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
-    PETBATTLE_EFFECT_TYPE_AURA_CANCEL           = 2,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
-    PETBATTLE_EFFECT_TYPE_AURA_CHANGE           = 3,  // PET_BATTLE_EFFECT_TARGET_EX_AURA
-    PETBATTLE_EFFECT_TYPE_PET_SWAP              = 4,  // PET_BATTLE_EFFECT_TARGET_EX_NONE
-    PETBATTLE_EFFECT_TYPE_STATUS_CHANGE         = 5,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
-    PETBATTLE_EFFECT_TYPE_SET_STATE             = 6,  // PET_BATTLE_EFFECT_TARGET_EX_STATE
-    PETBATTLE_EFFECT_TYPE_SET_MAX_HEALTH        = 7,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
-    PETBATTLE_EFFECT_TYPE_SET_SPEED             = 8,  // PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE
-    PETBATTLE_EFFECT_TYPE_SET_POWER             = 9,  // no idea which spells could use that
-    PETBATTLE_EFFECT_TYPE_TRIGGER_ABILITY       = 10, // PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY
-    PETBATTLE_EFFECT_TYPE_ABILITY_CHANGE        = 11, // probably for Dark Simulacrum which no longer exists
-    PETBATTLE_EFFECT_TYPE_NPC_EMOTE             = 12, // PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE
-    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_BEGIN = 13, // PET_BATTLE_EFFECT_TARGET_EX_NONE
-    PETBATTLE_EFFECT_TYPE_AURA_PROCESSING_END   = 14, // PET_BATTLE_EFFECT_TARGET_EX_NONE
-    PETBATTLE_EFFECT_TYPE_INVALID               = 15  // not sure about the value
-};
-
-// 6.2.4
-enum PetBattleEffectTargetEx
-{
-    PET_BATTLE_EFFECT_TARGET_EX_NONE            = 0,
-    PET_BATTLE_EFFECT_TARGET_EX_AURA            = 1,
-    PET_BATTLE_EFFECT_TARGET_EX_STATE           = 2,
-    PET_BATTLE_EFFECT_TARGET_EX_PET             = 3, // ?
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE     = 4,
-    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY = 5,
-    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE  = 6,
-    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE       = 7
-};
-
-PetBattleEffectTargetEx const targetExByType[PETBATTLE_EFFECT_TYPE_INVALID]
-{
-    PET_BATTLE_EFFECT_TARGET_EX_PET,
-    PET_BATTLE_EFFECT_TARGET_EX_AURA,
-    PET_BATTLE_EFFECT_TARGET_EX_AURA,
-    PET_BATTLE_EFFECT_TARGET_EX_AURA,
-    PET_BATTLE_EFFECT_TARGET_EX_NONE,
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
-    PET_BATTLE_EFFECT_TARGET_EX_STATE,
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,
-    PET_BATTLE_EFFECT_TARGET_EX_STAT_CHANGE,     // not verified
-    PET_BATTLE_EFFECT_TARGET_EX_TRIGGER_ABILITY,
-    PET_BATTLE_EFFECT_TARGET_EX_ABILITY_CHANGE,  // not verified
-    PET_BATTLE_EFFECT_TARGET_EX_NPC_EMOTE,
-    PET_BATTLE_EFFECT_TARGET_EX_NONE,
-    PET_BATTLE_EFFECT_TARGET_EX_NONE
-};
-
 class PetBattleAbility
 {
 public:
-    PetBattleAbility(uint32 abilityId, uint8 casterId, PetBattle* parentBattle) : _parentBattle(parentBattle), _casterId(casterId)
+    PetBattleAbility(uint32 abilityId, PetBattle::PetBattleObject* caster, PetBattle* battle) : _caster(caster), _battle(battle)
     {
         _ability = sBattlePetAbilityStore.LookupEntry(abilityId);
-        _caster = parentBattle->GetPetBattleObject(PBOIDNames(casterId));
         ASSERT(_ability);
         ASSERT(_caster);
+        ASSERT(_battle);
     }
 
     friend class PetBattle;
@@ -176,7 +124,7 @@ public:
     uint32 GetId() const { return _ability->ID; }
 
     PetBattle::PetBattleObject* GetCaster() { return _caster; }
-    PetBattleEffectTarget GetEffectTargetName(PetBattleAbilityEffectName const& effect) const;
+    PetBattleAbilityEffectTarget GetEffectTargetName(PetBattleAbilityEffectName const& effect) const;
     PetBattle::PetBattleObject* GetEffectTarget(PetBattleAbilityEffectName const& effectId) const;
 
     static void LoadAbilities();
@@ -192,14 +140,13 @@ public:
 private:
     PetBattle::PetBattleObject* _caster = nullptr;
     BattlePetAbilityEntry const* _ability = nullptr;
-    PetBattle* _parentBattle;
+    PetBattle* _battle;
     uint8 _round = 0;
-    uint8 _casterId;
 
     struct EffectTypeInfo
     {
         PetBattleEffectType type;
-        PetBattleEffectTarget implicitTarget;
+        PetBattleAbilityEffectTarget implicitTarget;
         // TODO: handler will need access to more stuff (effectID, properties...) -> waiting for containerception of DB2Stores
         void(PetBattleAbility::*handler)(BattlePetAbilityEffectEntry const*);
     };
