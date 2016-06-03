@@ -444,6 +444,10 @@ void BattlePetJournal::CageBattlePet(ObjectGuid guid)
     if (!item)
         return;
 
+    if (BattlePetSpeciesEntry const* speciesEntry = sBattlePetSpeciesStore.LookupEntry(pet->JournalInfo.CreatureID))
+        if (speciesEntry->Flags & SPECIES_FLAG_CANT_TRADE)
+            return;
+
     item->SetModifier(ITEM_MODIFIER_BATTLE_PET_SPECIES_ID, pet->JournalInfo.Species);
     item->SetModifier(ITEM_MODIFIER_BATTLE_PET_BREED_DATA, pet->JournalInfo.Breed | (pet->JournalInfo.Quality << 24));
     item->SetModifier(ITEM_MODIFIER_BATTLE_PET_LEVEL, pet->JournalInfo.Level);
